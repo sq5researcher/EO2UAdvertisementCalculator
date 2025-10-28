@@ -16,709 +16,733 @@
 ' ''    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 Public Class WardGroup
-   Public Enum Ward
-      None
-      South
-      East
-      West
-      North
-      Slums
-      Uptown
-   End Enum
+    Public Enum Ward
+        None
+        南区
+        東区
+        西区
+        北区
+        街外れ
+        中央区
+    End Enum
 
-   Private _GivenWard As Ward
-   Public Property GivenWard As Ward
-      Get
-         Return _GivenWard
-      End Get
-      Set(value As Ward)
-         GourmetCheckBox.Checked = False
-         _GivenWard = value
-         ClearPopulationsPanel()
-         If FOODS Is Nothing Then
-            Return
-         End If
-         Select Case value
-            Case Ward.South
-               LoadSouthWardCustomers()
-            Case Ward.North
-               LoadNorthWardCustomers()
-            Case Ward.East
-               LoadEastWardCustomers()
-            Case Ward.West
-               LoadWestWardCustomers()
-            Case Ward.Slums
-               LoadSlumCustomers()
-            Case Ward.Uptown
-               LoadUptownCustomers()
-            Case Ward.None
+    Private _GivenWard As Ward
+    Public Property GivenWard As Ward
+        Get
+            Return _GivenWard
+        End Get
+        Set(value As Ward)
+            GourmetCheckBox.Checked = False
+            _GivenWard = value
+            ClearPopulationsPanel()
+            If FOODS Is Nothing Then
+                Return
+            End If
+            Select Case value
+                Case Ward.南区
+                    LoadSouthWardCustomers()
+                Case Ward.北区
+                    LoadNorthWardCustomers()
+                Case Ward.東区
+                    LoadEastWardCustomers()
+                Case Ward.西区
+                    LoadWestWardCustomers()
+                Case Ward.街外れ
+                    LoadSlumCustomers()
+                Case Ward.中央区
+                    LoadUptownCustomers()
+                Case Ward.None
 
-            Case Else
-               Throw New Exception("Unknown Ward??!?!")
-         End Select
-         For i = 0 To 4
-            AddPopulation()
-         Next
-      End Set
-   End Property
+                Case Else
+                    Throw New Exception("Unknown Ward??!?!")
+            End Select
+            For i = 0 To 4
+                AddPopulation()
+            Next
+        End Set
+    End Property
 
-   Private Sub AddPopulation()
-      Dim newPopGroup As New PopulationGroup()
-      newPopGroup.GivenWard = Me.GivenWard
-      InnerPanel.Controls.Add(newPopGroup)
-   End Sub
+    Private Sub AddPopulation()
+        Dim newPopGroup As New PopulationGroup()
+        newPopGroup.GivenWard = Me.GivenWard
+        InnerPanel.Controls.Add(newPopGroup)
+    End Sub
 
-   Private Function GetPopulationGroups() As PopulationGroup()
-      Dim toRet As New List(Of PopulationGroup)
-      For Each c In InnerPanel.Controls
-         If GetType(PopulationGroup) = c.GetType Then
-            toRet.Add(CType(c, PopulationGroup))
-         End If
-      Next
-      Return toRet.ToArray
-   End Function
+    Private Function GetPopulationGroups() As PopulationGroup()
+        Dim toRet As New List(Of PopulationGroup)
+        For Each c In InnerPanel.Controls
+            If GetType(PopulationGroup) = c.GetType Then
+                toRet.Add(CType(c, PopulationGroup))
+            End If
+        Next
+        Return toRet.ToArray
+    End Function
 
-   Private Sub WardGroup_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-      LoadFoods()
-      StarLimitComboBox.SelectedIndex = 5
-      DistrictComboBox.SelectedIndex = 0
-      FoodResultLabel.Text = ""
-   End Sub
+    Private Sub WardGroup_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        LoadFoods()
+        StarLimitComboBox.SelectedIndex = 5
+        DistrictComboBox.SelectedIndex = 0
+        FoodResultLabel.Text = ""
+    End Sub
 
 
-   Private Sub CalculateButton_Click(sender As Object, e As EventArgs) Handles CalculateButton.Click
-      Dim groups() As PopulationGroup = GetPopulationGroups()
-      Dim customers As New List(Of String)
-      Dim populations As New List(Of Integer)
+    Private Sub CalculateButton_Click(sender As Object, e As EventArgs) Handles CalculateButton.Click
+        Dim groups() As PopulationGroup = GetPopulationGroups()
+        Dim customers As New List(Of String)
+        Dim populations As New List(Of Integer)
 
-      For Each p In groups
-         Dim cust = p.SelectedCustomer
-         If cust.Equals("") Then
-            Continue For
-         Else
-            Dim pop = p.SelectedPopulation
-            customers.Add(cust)
-            populations.Add(pop)
-         End If
-      Next
+        For Each p In groups
+            Dim cust = p.SelectedCustomer
+            If cust.Equals("") Then
+                Continue For
+            Else
+                Dim pop = p.SelectedPopulation
+                customers.Add(cust)
+                populations.Add(pop)
+            End If
+        Next
 
-      LatestFoodValueResults = GetOptimalFood(customers, populations, Integer.Parse(StarLimitComboBox.Text(8)), GourmetCheckBox.Checked)
-      DisplayFoodLabel()
-   End Sub
+        LatestFoodValueResults = GetOptimalFood(customers, populations, Integer.Parse(StarLimitComboBox.Text(8)), GourmetCheckBox.Checked)
+        DisplayFoodLabel()
+    End Sub
 
-   Private Sub DisplayFoodLabel()
-      If LatestFoodValueResults IsNot Nothing Then
-         FoodResultLabel.Text = LatestFoodValueResults(0).ToString
-         FoodValueIndex = 0
-      End If
-   End Sub
+    Private Sub DisplayFoodLabel()
+        If LatestFoodValueResults IsNot Nothing Then
+            FoodResultLabel.Text = LatestFoodValueResults(0).ToString
+            FoodValueIndex = 0
+        End If
+    End Sub
 
-   Private Sub GoUpOneFood()
-      If (FoodValueIndex > 0 AndAlso LatestFoodValueResults IsNot Nothing) Then
-         FoodValueIndex -= 1
-         FoodResultLabel.Text = LatestFoodValueResults(FoodValueIndex).ToString
-      End If
-   End Sub
+    Private Sub GoUpOneFood()
+        If (FoodValueIndex > 0 AndAlso LatestFoodValueResults IsNot Nothing) Then
+            FoodValueIndex -= 1
+            FoodResultLabel.Text = LatestFoodValueResults(FoodValueIndex).ToString
+        End If
+    End Sub
 
-   Private Sub GoDownOneFood()
-      If (LatestFoodValueResults IsNot Nothing AndAlso FoodValueIndex < LatestFoodValueResults.Count - 1) Then
-         FoodValueIndex += 1
-         FoodResultLabel.Text = LatestFoodValueResults(FoodValueIndex).ToString
-      End If
-   End Sub
+    Private Sub GoDownOneFood()
+        If (LatestFoodValueResults IsNot Nothing AndAlso FoodValueIndex < LatestFoodValueResults.Count - 1) Then
+            FoodValueIndex += 1
+            FoodResultLabel.Text = LatestFoodValueResults(FoodValueIndex).ToString
+        End If
+    End Sub
 
-   Private FoodValueIndex As Integer = 0
-   Private LatestFoodValueResults As List(Of FoodValue) = Nothing
+    Private FoodValueIndex As Integer = 0
+    Private LatestFoodValueResults As List(Of FoodValue) = Nothing
 
-   Private Sub ClearPopulationsPanel()
-      InnerPanel.Controls.Clear()
-      'AddPopulation()
-   End Sub
+    Private Sub ClearPopulationsPanel()
+        InnerPanel.Controls.Clear()
+        'AddPopulation()
+    End Sub
 
-   Private Sub ResetButton_Click(sender As Object, e As EventArgs) Handles ResetButton.Click
-      GivenWard = GivenWard
-   End Sub
+    Private Sub ResetButton_Click(sender As Object, e As EventArgs) Handles ResetButton.Click
+        GivenWard = GivenWard
+        FoodResultLabel.Text = ""
+    End Sub
 
-   Private Shared Function ScalePopulation(p1 As Integer) As Integer
-      Select Case p1
-         Case 1
-            Return 2
-         Case 2
-            Return 6
-         Case 3
-            Return 10
-         Case 4
-            Return 15
-         Case 5
-            Return 39
-      End Select
-      Return 0
-   End Function
+    Private Shared Function ScalePopulation(p1 As Integer) As Integer
+        Select Case p1
+            Case 1
+                Return 2
+            Case 2
+                Return 6
+            Case 3
+                Return 10
+            Case 4
+                Return 15
+            Case 5
+                Return 39
+        End Select
+        Return 0
+    End Function
 
 #Region "FOOD"
-   Private Shared FOODS() As Food
+    Private Shared FOODS() As Food
 
-   Private Class Food
-      Public Name As String
-      Public Stars As Integer
-      Public Price As Integer
-      Public Customers() As String
+    Private Class Food
+        Public Name As String
+        Public Stars As Integer
+        Public Price As Integer
+        Public Customers() As String
 
-      Public Sub New(ByVal n As String, ByVal s As Integer, ByVal p As Integer)
-         Me.Name = n
-         Me.Stars = s
-         Me.Price = p
-         Customers = {}
-      End Sub
-   End Class
+        Public Sub New(ByVal n As String, ByVal s As Integer, ByVal p As Integer)
+            Me.Name = n
+            Me.Stars = s
+            Me.Price = p
+            Customers = {}
+        End Sub
+    End Class
 
-   Private Shared Sub LoadFoods()
-      FOODS = {New Food("Stir-Fried Roller", 1, 73), New Food("Citron Owl Bowl", 1, 78), New Food("Seared Deer", 1, 87), New Food("Black Tea", 1, 81), New Food("Butterfly Tsukudani", 1, 77), New Food("Owl Cartilage Karaage", 1, 81), New Food("Walnut Yokan", 1, 83), New Food("Forest Deer Sukiyaki", 1, 105), New Food("Escargot Citron", 1, 77), New Food("Hi Lagaar Coffee", 1, 74), New Food("Walnut Bread", 1, 90), New Food("Deer Steak", 1, 99), New Food("Mala Inferno Pot", 2, 135), New Food("Sweet and Sour Moa", 2, 106), New Food("Chestnut Moon Cake", 2, 130), New Food("Dragon Jelly", 2, 124), New Food("Odd Ishiyaki Pot", 2, 113), New Food("Boar Tonjiru", 2, 114), New Food("Chestnut Chakin Shibori", 2, 119), New Food("Autumn Dango", 2, 137), New Food("Fanged Sandwich", 2, 95), New Food("Autumn Pot-au-feu", 2, 105), New Food("Persimmon Pudding", 2, 124), New Food("Gibier Curry Rice", 2, 137), New Food("Apple Blue Aiyu Jelly", 3, 219), New Food("Bison Lamian", 3, 179), New Food("Horse Bao", 3, 164), New Food("Snow Egg Foo Young", 3, 169), New Food("Traditional Kabutoyaki", 3, 152), New Food("Snow Egg Oden", 3, 183), New Food("Crab Chazuke", 3, 210), New Food("Apple Matcha Shaved Ice", 3, 190), New Food("Monster Fish Panino", 3, 222), New Food("Apple Sauce Bison Steak", 3, 160), New Food("Crab Cream Croquette", 3, 203), New Food("Forest Paella", 3, 186), New Food("Fried Whole Spider", 4, 202), New Food("Forest Fried Rice", 4, 207), New Food("Stewed Rhino", 4, 243), New Food("Pepper Cockatrice", 4, 226), New Food("Shell Yakiniku", 4, 243), New Food("Strawberry Daikuku", 4, 216), New Food("Sakura Tea", 4, 213), New Food("Stone Bird Nikujaga", 4, 235), New Food("Scorpion Green Pasta", 4, 243), New Food("Honey German Potato", 4, 205), New Food("Strawberry-Jam Loin Steak", 4, 247), New Food("Rhino Meat Stew", 4, 292), New Food("Nozuchi Soup", 5, 329), New Food("Zhulongbao", 5, 338), New Food("Nest and Mushroom Soup", 5, 264), New Food("Beggar's Fowl", 5, 273), New Food("Tortoise Takikomi Gohan", 5, 329), New Food("Horse Shabu Shabu", 5, 320), New Food("Sky Chawanmushi", 5, 301), New Food("Gem Nikogori", 5, 268), New Food("Ominous Aspic", 5, 386), New Food("Triple Salisbury", 5, 333), New Food("Steak Tartare", 5, 329), New Food("Stone Galette", 5, 336), New Food("Dangerous Flowering Tea", 6, 450), New Food("Shumai", 6, 421), New Food("Twice-cooked Meat", 6, 434), New Food("BBQ Lizard", 6, 444), New Food("Hermit Suguta-zukuri", 6, 368), New Food("Black Osuimono", 6, 444), New Food("Sumo Chank Pot", 6, 440), New Food("Eastern Nishime", 6, 450), New Food("Caterpillar Casserole", 6, 430), New Food("Orange-Sauce Kaiju Steak", 6, 441), New Food("Bamboo Sarmale", 6, 450), New Food("Pumpkin Pie", 6, 421)}
-   End Sub
+    Private Shared Sub LoadFoods()
+        FOODS = {
+            New Food("球獣肉とアスパラの中華炒め", 1, 73), New Food("軟骨揚げのシトロン餡かけ丼", 1, 78), New Food("シカ肉のタタキ風", 1, 97), New Food("黒茶", 1, 81),
+            New Food("アゲハの姿佃煮", 1, 77), New Food("梟の軟骨からあげ", 1, 81), New Food("くるみ羊羹", 1, 83), New Food("鹿肉と樹海野菜のすき鍋", 1, 105),
+            New Food("エスカルゴ焼シトロンソース添え", 1, 77), New Food("ハイラガコーヒー", 1, 74), New Food("クルミ入りライ麦パン", 1, 90), New Food("シカ肉のステーキ", 1, 99),
+            New Food("麻辣獄火鍋", 2, 135), New Food("鶏唐揚げの甘酢餡かけ", 2, 106), New Food("栗月餅", 2, 130), New Food("火龍果杏仁", 2, 124),
+            New Food("怪しい石焼き鍋", 2, 113), New Food("巨猪の豚汁", 2, 114), New Food("鬼いが栗の茶巾絞り", 2, 119), New Food("紅葉狩り串団子", 2, 137),
+            New Food("かみつきのサンドイッチ", 2, 95), New Food("旬の秋野菜ポトフ", 2, 105), New Food("パーシモンプディング", 2, 124), New Food("ジビエカレーライス", 2, 137),
+            New Food("リンゴ入り愛玉子風ブルーゼリー", 3, 219), New Food("野牛肉拉麺", 3, 179), New Food("馬肉中華包子", 3, 164), New Food("雪鳥の蟹玉", 3, 169),
+            New Food("東国の伝統兜焼き", 3, 152), New Food("雪鳥卵の熱々おでん", 3, 183), New Food("カニの樹海茶漬け", 3, 210), New Food("林檎と抹茶のかき氷", 3, 190),
+            New Food("発酵怪魚パニーノ", 3, 222), New Food("野牛ステーキのリンゴソース添え", 3, 160), New Food("カニクリームコロッケ", 3, 203), New Food("樹海パエリア", 3, 186),
+            New Food("蜘蛛の姿揚げ", 4, 202), New Food("樹海鳥の雷炒飯", 4, 207), New Food("森林サイ角煮", 4, 243), New Food("石化鳥と樹海野菜の細切り炒め", 4, 226),
+            New Food("亀の甲羅焼き肉", 4, 243), New Food("大苺大福", 4, 216), New Food("樹海桜茶", 4, 213), New Food("石化鳥の肉じゃが", 4, 235),
+            New Food("サソリのグリーンパスタ", 4, 243), New Food("ハチミツジャーマンポテト", 4, 205), New Food("ももステーキの桜苺ジャム添え", 4, 247), New Food("サイ肉のとろとろシチュー", 4, 292),
+            New Food("ノヅチ丸ごとスープ", 5, 329), New Food("宝龍包", 5, 338), New Food("皇帝ツバメの巣と岩茸の幻スープ", 5, 264), New Food("きょうか鶏", 5, 273),
+            New Food("特製大釜の鎧竜炊き込みご飯", 5, 329), New Food("桜肉のしゃぶしゃぶ	", 5, 320), New Food("雲海山鳥の茶碗蒸し", 5, 301), New Food("宝石煮こごりのツバメの巣入り", 5, 268),
+            New Food("禍々しいアスピック", 5, 386), New Food("３種食べ比べハンバーグ", 5, 333), New Food("タルタルステーキ", 5, 329), New Food("ストーンガレット", 5, 336),
+            New Food("危険な花茶", 6, 450), New Food("シュウマイ", 6, 421), New Food("樹海特選の回鍋肉", 6, 434), New Food("蜥蜴肉の蜜汁火方", 6, 444),
+            New Food("古代ヤドカリの姿造り", 6, 368), New Food("黒獣のお吸い物", 6, 444), New Food("力士秘伝のちゃんこ風鍋", 6, 440), New Food("東国伝来の煮しめ", 6, 450),
+            New Food("大芋虫のキャセロール", 6, 430), New Food("オレンジソースの怪獣ステーキ", 6, 441), New Food("タケノコが入ったサルマーレ", 6, 450), New Food("パンプキンパイ", 6, 421)
+        }
+    End Sub
 
-   Private Shared Function GetFood(ByVal givenName As String) As Food
-      Return Array.Find(FOODS, Function(s) s.Name = givenName)
-   End Function
+    Private Shared Function GetFood(ByVal givenName As String) As Food
+        Return Array.Find(FOODS, Function(s) s.Name = givenName)
+    End Function
 
-   Private Class FoodValue
-      Implements IComparable(Of FoodValue)
-      Public Food As Food
-      Public Value As Integer
-      Public Patrons As String
+    Private Class FoodValue
+        Implements IComparable(Of FoodValue)
+        Public Food As Food
+        Public Value As Integer
+        Public Patrons As String
 
-      Public Sub New(ByVal a As Food, ByVal b As Integer, ByVal p As String)
-         Food = a
-         Value = b
-         Patrons = p
-      End Sub
+        Public Sub New(ByVal a As Food, ByVal b As Integer, ByVal p As String)
+            Food = a
+            Value = b
+            Patrons = p
+        End Sub
 
-      Function CompareTo(ByVal other As FoodValue) As Integer Implements IComparable(Of AdvertisementOptimizer.WardGroup.FoodValue).CompareTo
-         Return other.Value - Me.Value
-      End Function
+        Function CompareTo(ByVal other As FoodValue) As Integer Implements IComparable(Of AdvertisementOptimizer.WardGroup.FoodValue).CompareTo
+            Return other.Value - Me.Value
+        End Function
 
-      Public Overrides Function ToString() As String
-         If Food Is Nothing Then
-            Return "Error!"
-         Else
-            Dim stars As String = ""
-            Dim starChar As Char = "★"c
-            For i = 1 To Food.Stars
-               stars = stars & starChar
-            Next
-            Return Food.Name & " (Food Price: " & Food.Price & ", " & stars & ")" & vbNewLine &
-                   "Will Eat: " & Patrons
-         End If
-      End Function
-   End Class
-   Private Shared Function GetOptimalFood(ByVal customers As IEnumerable(Of String), ByVal populations As IEnumerable(Of Integer), Optional starLimit As Integer = 5, Optional gourmetKing As Boolean = False) As List(Of FoodValue)
-
-      Dim foodValuesList As New List(Of FoodValue)
-
-      For Each food As Food In FOODS
-         Dim patronString As String = ""
-         If food.Stars > starLimit Then
-            Continue For
-         End If
-
-         Dim currentFoodValue As Integer = 0
-
-         If Not gourmetKing Then
-            Dim patronList As New List(Of String)
-            For i = 0 To customers.Count - 1
-               Dim currentCustomer As String = customers(i)
-               If food.Customers.Contains(currentCustomer) Then
-                  currentFoodValue += food.Price * ScalePopulation(populations(i))
-                  patronList.Add(currentCustomer)
-               End If
-            Next
-
-            If patronList.Count = 1 Then
-               patronString = patronList(0)
-            ElseIf patronList.Count = customers.Count Then
-               patronString = "Everyone"
-            ElseIf patronList.Count > 0 Then
-               For Each p In patronList
-                  patronString += p.Split(" "c)(0) & ", "
-               Next
-               patronString = patronString.Substring(0, patronString.Length - 2)
+        Public Overrides Function ToString() As String
+            If Food Is Nothing Then
+                Return "Error!"
+            Else
+                Dim stars As String = ""
+                Dim starChar As Char = "★"c
+                For i = 1 To Food.Stars
+                    stars = stars & starChar
+                Next
+                Return Food.Name & " (価格: " & Food.Price & ", " & stars & ")" & vbNewLine &
+                   "顧客: " & Patrons
             End If
-         Else
-            currentFoodValue += food.Price
-            patronString = "Everyone"
-         End If
+        End Function
+    End Class
+    Private Shared Function GetOptimalFood(ByVal customers As IEnumerable(Of String), ByVal populations As IEnumerable(Of Integer), Optional starLimit As Integer = 5, Optional gourmetKing As Boolean = False) As List(Of FoodValue)
 
-         foodValuesList.Add(New FoodValue(food, currentFoodValue, patronString))
-      Next
+        Dim foodValuesList As New List(Of FoodValue)
 
-      foodValuesList.Sort()
+        For Each food As Food In FOODS
+            Dim patronString As String = ""
+            If food.Stars > starLimit Then
+                Continue For
+            End If
+
+            Dim currentFoodValue As Integer = 0
+
+            If Not gourmetKing Then
+                Dim patronList As New List(Of String)
+                For i = 0 To customers.Count - 1
+                    Dim currentCustomer As String = customers(i)
+                    If food.Customers.Contains(currentCustomer) Then
+                        currentFoodValue += food.Price * ScalePopulation(populations(i))
+                        patronList.Add(currentCustomer)
+                    End If
+                Next
+
+                If patronList.Count = 1 Then
+                    patronString = patronList(0)
+                ElseIf patronList.Count = customers.Count Then
+                    patronString = "全員"
+                ElseIf patronList.Count > 0 Then
+                    For Each p In patronList
+                        patronString += p.Split(" "c)(0) & ", "
+                    Next
+                    patronString = patronString.Substring(0, patronString.Length - 2)
+                End If
+            Else
+                currentFoodValue += food.Price
+                patronString = "全員"
+            End If
+
+            foodValuesList.Add(New FoodValue(food, currentFoodValue, patronString))
+        Next
+
+        foodValuesList.Sort()
 
 
-      Return foodValuesList
-   End Function
+        Return foodValuesList
+    End Function
 #End Region
 
 #Region "LOADING"
-   Private Shared Sub LoadEastWardCustomers()
-      GetFood("Stir-Fried Roller").Customers = {"East Ward Guards", "Lagaard Cultivators", "Senior Club", "Tailor Guild"}
-      GetFood("Citron Owl Bowl").Customers = {"East Ward Guards"}
-      GetFood("Seared Deer").Customers = {"Tailor Guild", "Survivalist Association (Grimoire)"}
-      GetFood("Black Tea").Customers = {"Lagaard Cultivators", "Senior Club", "Clinic Medics (Grimoire)"}
-      GetFood("Butterfly Tsukudani").Customers = {"Lagaard Cultivators", "Senior Club"}
-      GetFood("Owl Cartilage Karaage").Customers = {"East Ward Guards"}
-      GetFood("Walnut Yokan").Customers = {"Lagaard Cultivators", "Playing Kids", "Senior Club", "Survivalist Association (Grimoire)", "Clinic Medics (Grimoire)"}
-      GetFood("Forest Deer Sukiyaki").Customers = {"Lagaard Cultivators", "Senior Club", "Tailor Guild"}
-      GetFood("Escargot Citron").Customers = {}
-      GetFood("Hi Lagaar Coffee").Customers = {"Lagaard Cultivators", "Senior Club", "Tailor Guild", "Clinic Medics (Grimoire)"}
-      GetFood("Walnut Bread").Customers = {"Tailor Guild"}
-      GetFood("Deer Steak").Customers = {"Lagaard Cultivators", "Senior Club", "Tailor Guild"}
-      GetFood("Mala Inferno Pot").Customers = {"Lagaard Cultivators", "Senior Club"}
-      GetFood("Sweet and Sour Moa").Customers = {"East Ward Guards", "Lagaard Cultivators"}
-      GetFood("Chestnut Moon Cake").Customers = {"Lagaard Cultivators", "Playing Kids", "Senior Club", "Tailor Guild", "Survivalist Association (Grimoire)"}
-      GetFood("Dragon Jelly").Customers = {"Playing Kids", "Survivalist Association (Grimoire)"}
-      GetFood("Odd Ishiyaki Pot").Customers = {}
-      GetFood("Boar Tonjiru").Customers = {"Lagaard Cultivators"}
-      GetFood("Chestnut Chakin Shibori").Customers = {"Lagaard Cultivators", "Playing Kids", "Senior Club", "Survivalist Association (Grimoire)", "Clinic Medics (Grimoire)"}
-      GetFood("Autumn Dango").Customers = {"Playing Kids", "Senior Club", "Clinic Medics (Grimoire)"}
-      GetFood("Fanged Sandwich").Customers = {"Lagaard Cultivators", "Tailor Guild", "Survivalist Association (Grimoire)"}
-      GetFood("Autumn Pot-au-feu").Customers = {"Lagaard Cultivators", "Senior Club"}
-      GetFood("Persimmon Pudding").Customers = {"Playing Kids", "Clinic Medics (Grimoire)"}
-      GetFood("Gibier Curry Rice").Customers = {"Lagaard Cultivators", "Senior Club", "Clinic Medics (Grimoire)"}
-      GetFood("Apple Blue Aiyu Jelly").Customers = {"Playing Kids"}
-      GetFood("Bison Lamian").Customers = {"Tailor Guild"}
-      GetFood("Horse Bao").Customers = {"Lagaard Cultivators", "Senior Club", "Tailor Guild", "Clinic Medics (Grimoire)"}
-      GetFood("Snow Egg Foo Young").Customers = {"East Ward Guards", "Tailor Guild"}
-      GetFood("Traditional Kabutoyaki").Customers = {"Lagaard Cultivators", "Senior Club", "Tailor Guild"}
-      GetFood("Snow Egg Oden").Customers = {"Senior Club"}
-      GetFood("Crab Chazuke").Customers = {"Lagaard Cultivators"}
-      GetFood("Apple Matcha Shaved Ice").Customers = {"Lagaard Cultivators", "Playing Kids", "Survivalist Association (Grimoire)"}
-      GetFood("Monster Fish Panino").Customers = {"Tailor Guild"}
-      GetFood("Apple Sauce Bison Steak").Customers = {"Tailor Guild"}
-      GetFood("Crab Cream Croquette").Customers = {"East Ward Guards", "Lagaard Cultivators", "Tailor Guild"}
-      GetFood("Forest Paella").Customers = {"Lagaard Cultivators", "Senior Club"}
-      GetFood("Fried Whole Spider").Customers = {"East Ward Guards", "Lagaard Cultivators", "Senior Club"}
-      GetFood("Forest Fried Rice").Customers = {"East Ward Guards"}
-      GetFood("Stewed Rhino").Customers = {"Lagaard Cultivators", "Farmers Market Patrons (Event)"}
-      GetFood("Pepper Cockatrice").Customers = {"East Ward Guards", "Lagaard Cultivators", "Senior Club"}
-      GetFood("Shell Yakiniku").Customers = {"Tailor Guild"}
-      GetFood("Strawberry Daikuku").Customers = {"Playing Kids", "Survivalist Association (Grimoire)", "Clinic Medics (Grimoire)", "Farmers Market Patrons (Event)"}
-      GetFood("Sakura Tea").Customers = {"Clinic Medics (Grimoire)", "Farmers Market Patrons (Event)"}
-      GetFood("Stone Bird Nikujaga").Customers = {"Lagaard Cultivators", "Senior Club"}
-      GetFood("Scorpion Green Pasta").Customers = {"Lagaard Cultivators", "Tailor Guild"}
-      GetFood("Honey German Potato").Customers = {"East Ward Guards", "Lagaard Cultivators", "Senior Club", "Farmers Market Patrons (Event)"}
-      GetFood("Strawberry-Jam Loin Steak").Customers = {"Tailor Guild"}
-      GetFood("Rhino Meat Stew").Customers = {"Lagaard Cultivators", "Senior Club"}
-      GetFood("Nozuchi Soup").Customers = {"Lagaard Cultivators"}
-      GetFood("Zhulongbao").Customers = {"Lagaard Cultivators", "Tailor Guild", "Clinic Medics (Grimoire)"}
-      GetFood("Nest and Mushroom Soup").Customers = {"Lagaard Cultivators"}
-      GetFood("Beggar's Fowl").Customers = {"Clinic Medics (Grimoire)"}
-      GetFood("Tortoise Takikomi Gohan").Customers = {}
-      GetFood("Horse Shabu Shabu").Customers = {}
-      GetFood("Sky Chawanmushi").Customers = {"Lagaard Cultivators", "Clinic Medics (Grimoire)"}
-      GetFood("Gem Nikogori").Customers = {"Survivalist Association (Grimoire)"}
-      GetFood("Ominous Aspic").Customers = {}
-      GetFood("Triple Salisbury").Customers = {"Tailor Guild"}
-      GetFood("Steak Tartare").Customers = {"Survivalist Association (Grimoire)"}
-      GetFood("Stone Galette").Customers = {"Lagaard Cultivators", "Tailor Guild"}
-      GetFood("Dangerous Flowering Tea").Customers = {"Clinic Medics (Grimoire)"}
-      GetFood("Shumai").Customers = {"Lagaard Cultivators", "Tailor Guild", "Clinic Medics (Grimoire)"}
-      GetFood("Twice-cooked Meat").Customers = {"East Ward Guards", "Lagaard Cultivators"}
-      GetFood("BBQ Lizard").Customers = {"Lagaard Cultivators", "Clinic Medics (Grimoire)", "Farmers Market Patrons (Event)"}
-      GetFood("Hermit Suguta-zukuri").Customers = {"Survivalist Association (Grimoire)"}
-      GetFood("Black Osuimono").Customers = {"Lagaard Cultivators"}
-      GetFood("Sumo Chank Pot").Customers = {"Lagaard Cultivators"}
-      GetFood("Eastern Nishime").Customers = {"Lagaard Cultivators", "Farmers Market Patrons (Event)"}
-      GetFood("Caterpillar Casserole").Customers = {"Lagaard Cultivators"}
-      GetFood("Orange-Sauce Kaiju Steak").Customers = {"Tailor Guild"}
-      GetFood("Bamboo Sarmale").Customers = {"Lagaard Cultivators"}
-      GetFood("Pumpkin Pie").Customers = {"Lagaard Cultivators", "Playing Kids", "Tailor Guild", "Survivalist Association (Grimoire)", "Farmers Market Patrons (Event)"}
-   End Sub
+    Private Shared Sub LoadEastWardCustomers()
+        GetFood("球獣肉とアスパラの中華炒め").Customers = {"東区担当の衛兵隊", "ハイラガ開墾団", "ともしび老人会", "仕立て屋ギルドの職人"}
+        GetFood("軟骨揚げのシトロン餡かけ丼").Customers = {"東区担当の衛兵隊"}
+        GetFood("シカ肉のタタキ風").Customers = {"仕立て屋ギルドの職人", "レンジャー協会 (グリモア)"}
+        GetFood("黒茶").Customers = {"ハイラガ開墾団", "ともしび老人会", "施療院のお抱えメディック (グリモア)"}
+        GetFood("アゲハの姿佃煮").Customers = {"ハイラガ開墾団", "ともしび老人会"}
+        GetFood("梟の軟骨からあげ").Customers = {"東区担当の衛兵隊"}
+        GetFood("くるみ羊羹").Customers = {"ハイラガ開墾団", "道で遊ぶ子供たち", "ともしび老人会", "レンジャー協会 (グリモア)", "施療院のお抱えメディック (グリモア)"}
+        GetFood("鹿肉と樹海野菜のすき鍋").Customers = {"ハイラガ開墾団", "ともしび老人会", "仕立て屋ギルドの職人"}
+        GetFood("エスカルゴ焼シトロンソース添え").Customers = {}
+        GetFood("ハイラガコーヒー").Customers = {"ハイラガ開墾団", "ともしび老人会", "仕立て屋ギルドの職人", "施療院のお抱えメディック (グリモア)"}
+        GetFood("クルミ入りライ麦パン").Customers = {"仕立て屋ギルドの職人"}
+        GetFood("シカ肉のステーキ").Customers = {"ハイラガ開墾団", "ともしび老人会", "仕立て屋ギルドの職人"}
+        GetFood("麻辣獄火鍋").Customers = {"ハイラガ開墾団", "ともしび老人会"}
+        GetFood("鶏唐揚げの甘酢餡かけ").Customers = {"東区担当の衛兵隊", "ハイラガ開墾団"}
+        GetFood("栗月餅").Customers = {"ハイラガ開墾団", "道で遊ぶ子供たち", "ともしび老人会", "仕立て屋ギルドの職人", "レンジャー協会 (グリモア)"}
+        GetFood("火龍果杏仁").Customers = {"道で遊ぶ子供たち", "レンジャー協会 (グリモア)"}
+        GetFood("怪しい石焼き鍋").Customers = {}
+        GetFood("巨猪の豚汁").Customers = {"ハイラガ開墾団"}
+        GetFood("鬼いが栗の茶巾絞り").Customers = {"ハイラガ開墾団", "道で遊ぶ子供たち", "ともしび老人会", "レンジャー協会 (グリモア)", "施療院のお抱えメディック (グリモア)"}
+        GetFood("紅葉狩り串団子").Customers = {"道で遊ぶ子供たち", "ともしび老人会", "施療院のお抱えメディック (グリモア)"}
+        GetFood("かみつきのサンドイッチ").Customers = {"ハイラガ開墾団", "仕立て屋ギルドの職人", "レンジャー協会 (グリモア)"}
+        GetFood("旬の秋野菜ポトフ").Customers = {"ハイラガ開墾団", "ともしび老人会"}
+        GetFood("パーシモンプディング").Customers = {"道で遊ぶ子供たち", "施療院のお抱えメディック (グリモア)"}
+        GetFood("ジビエカレーライス").Customers = {"ハイラガ開墾団", "ともしび老人会", "施療院のお抱えメディック (グリモア)"}
+        GetFood("リンゴ入り愛玉子風ブルーゼリー").Customers = {"道で遊ぶ子供たち"}
+        GetFood("野牛肉拉麺").Customers = {"仕立て屋ギルドの職人"}
+        GetFood("馬肉中華包子").Customers = {"ハイラガ開墾団", "ともしび老人会", "仕立て屋ギルドの職人", "施療院のお抱えメディック (グリモア)"}
+        GetFood("雪鳥の蟹玉").Customers = {"東区担当の衛兵隊", "仕立て屋ギルドの職人"}
+        GetFood("東国の伝統兜焼き").Customers = {"ハイラガ開墾団", "ともしび老人会", "仕立て屋ギルドの職人"}
+        GetFood("雪鳥卵の熱々おでん").Customers = {"ともしび老人会"}
+        GetFood("カニの樹海茶漬け").Customers = {"ハイラガ開墾団"}
+        GetFood("林檎と抹茶のかき氷").Customers = {"ハイラガ開墾団", "道で遊ぶ子供たち", "レンジャー協会 (グリモア)"}
+        GetFood("発酵怪魚パニーノ").Customers = {"仕立て屋ギルドの職人"}
+        GetFood("野牛ステーキのリンゴソース添え").Customers = {"仕立て屋ギルドの職人"}
+        GetFood("カニクリームコロッケ").Customers = {"東区担当の衛兵隊", "ハイラガ開墾団", "仕立て屋ギルドの職人"}
+        GetFood("樹海パエリア").Customers = {"ハイラガ開墾団", "ともしび老人会"}
+        GetFood("蜘蛛の姿揚げ").Customers = {"東区担当の衛兵隊", "ハイラガ開墾団", "ともしび老人会"}
+        GetFood("樹海鳥の雷炒飯").Customers = {"東区担当の衛兵隊"}
+        GetFood("森林サイ角煮").Customers = {"ハイラガ開墾団", "野菜直売会に訪れた客 (イベント)"}
+        GetFood("石化鳥と樹海野菜の細切り炒め").Customers = {"東区担当の衛兵隊", "ハイラガ開墾団", "ともしび老人会"}
+        GetFood("亀の甲羅焼き肉").Customers = {"仕立て屋ギルドの職人"}
+        GetFood("大苺大福").Customers = {"道で遊ぶ子供たち", "レンジャー協会 (グリモア)", "施療院のお抱えメディック (グリモア)", "野菜直売会に訪れた客 (イベント)"}
+        GetFood("樹海桜茶").Customers = {"施療院のお抱えメディック (グリモア)", "野菜直売会に訪れた客 (イベント)"}
+        GetFood("石化鳥の肉じゃが").Customers = {"ハイラガ開墾団", "ともしび老人会"}
+        GetFood("サソリのグリーンパスタ").Customers = {"ハイラガ開墾団", "仕立て屋ギルドの職人"}
+        GetFood("ハチミツジャーマンポテト").Customers = {"東区担当の衛兵隊", "ハイラガ開墾団", "ともしび老人会", "野菜直売会に訪れた客 (イベント)"}
+        GetFood("ももステーキの桜苺ジャム添え").Customers = {"仕立て屋ギルドの職人"}
+        GetFood("サイ肉のとろとろシチュー").Customers = {"ハイラガ開墾団", "ともしび老人会"}
+        GetFood("ノヅチ丸ごとスープ").Customers = {"ハイラガ開墾団"}
+        GetFood("宝龍包").Customers = {"ハイラガ開墾団", "仕立て屋ギルドの職人", "施療院のお抱えメディック (グリモア)"}
+        GetFood("皇帝ツバメの巣と岩茸の幻スープ").Customers = {"ハイラガ開墾団"}
+        GetFood("きょうか鶏").Customers = {"施療院のお抱えメディック (グリモア)"}
+        GetFood("特製大釜の鎧竜炊き込みご飯").Customers = {}
+        GetFood("桜肉のしゃぶしゃぶ	").Customers = {}
+        GetFood("雲海山鳥の茶碗蒸し").Customers = {"ハイラガ開墾団", "施療院のお抱えメディック (グリモア)"}
+        GetFood("宝石煮こごりのツバメの巣入り").Customers = {"レンジャー協会 (グリモア)"}
+        GetFood("禍々しいアスピック").Customers = {}
+        GetFood("３種食べ比べハンバーグ").Customers = {"仕立て屋ギルドの職人"}
+        GetFood("タルタルステーキ").Customers = {"レンジャー協会 (グリモア)"}
+        GetFood("ストーンガレット").Customers = {"ハイラガ開墾団", "仕立て屋ギルドの職人"}
+        GetFood("危険な花茶").Customers = {"施療院のお抱えメディック (グリモア)"}
+        GetFood("シュウマイ").Customers = {"ハイラガ開墾団", "仕立て屋ギルドの職人", "施療院のお抱えメディック (グリモア)"}
+        GetFood("樹海特選の回鍋肉").Customers = {"東区担当の衛兵隊", "ハイラガ開墾団"}
+        GetFood("蜥蜴肉の蜜汁火方").Customers = {"ハイラガ開墾団", "施療院のお抱えメディック (グリモア)", "野菜直売会に訪れた客 (イベント)"}
+        GetFood("古代ヤドカリの姿造り").Customers = {"レンジャー協会 (グリモア)"}
+        GetFood("黒獣のお吸い物").Customers = {"ハイラガ開墾団"}
+        GetFood("力士秘伝のちゃんこ風鍋").Customers = {"ハイラガ開墾団"}
+        GetFood("東国伝来の煮しめ").Customers = {"ハイラガ開墾団", "野菜直売会に訪れた客 (イベント)"}
+        GetFood("大芋虫のキャセロール").Customers = {"ハイラガ開墾団"}
+        GetFood("オレンジソースの怪獣ステーキ").Customers = {"仕立て屋ギルドの職人"}
+        GetFood("タケノコが入ったサルマーレ").Customers = {"ハイラガ開墾団"}
+        GetFood("パンプキンパイ").Customers = {"ハイラガ開墾団", "道で遊ぶ子供たち", "仕立て屋ギルドの職人", "レンジャー協会 (グリモア)", "野菜直売会に訪れた客 (イベント)"}
+    End Sub
 
-   Private Shared Sub LoadWestWardCustomers()
-      GetFood("Stir-Fried Roller").Customers = {"HL Academy Students", "Custom Shoemakers"}
-      GetFood("Citron Owl Bowl").Customers = {"Alchemist Union (Grimoire)"}
-      GetFood("Seared Deer").Customers = {"HL Academy Students", "Custom Shoemakers", "Guard Trainees"}
-      GetFood("Black Tea").Customers = {"Bazaar Visitors (Event)"}
-      GetFood("Butterfly Tsukudani").Customers = {}
-      GetFood("Owl Cartilage Karaage").Customers = {"Alchemist Union (Grimoire)"}
-      GetFood("Walnut Yokan").Customers = {"HL Academy Professors", "West Artist Guild", "Guard Trainees", "War Lore Study Society (Grimoire)"}
-      GetFood("Forest Deer Sukiyaki").Customers = {"HL Academy Students", "HL Academy Professors", "Custom Shoemakers"}
-      GetFood("Escargot Citron").Customers = {"Custom Shoemakers", "Alchemist Union (Grimoire)", "War Lore Study Society (Grimoire)"}
-      GetFood("Hi Lagaar Coffee").Customers = {"Bazaar Visitors (Event)"}
-      GetFood("Walnut Bread").Customers = {"Custom Shoemakers", "War Lore Study Society (Grimoire)"}
-      GetFood("Deer Steak").Customers = {"HL Academy Students", "Custom Shoemakers"}
-      GetFood("Mala Inferno Pot").Customers = {"HL Academy Students", "HL Academy Professors"}
-      GetFood("Sweet and Sour Moa").Customers = {"HL Academy Students", "Alchemist Union (Grimoire)"}
-      GetFood("Chestnut Moon Cake").Customers = {"Custom Shoemakers", "West Artist Guild", "Guard Trainees", "War Lore Study Society (Grimoire)"}
-      GetFood("Dragon Jelly").Customers = {"West Artist Guild", "Guard Trainees", "War Lore Study Society (Grimoire)"}
-      GetFood("Odd Ishiyaki Pot").Customers = {"HL Academy Professors", "Alchemist Union (Grimoire)"}
-      GetFood("Boar Tonjiru").Customers = {"HL Academy Students"}
-      GetFood("Chestnut Chakin Shibori").Customers = {"HL Academy Professors", "West Artist Guild", "Guard Trainees", "War Lore Study Society (Grimoire)"}
-      GetFood("Autumn Dango").Customers = {"HL Academy Professors", "West Artist Guild", "Guard Trainees", "War Lore Study Society (Grimoire)"}
-      GetFood("Fanged Sandwich").Customers = {"Custom Shoemakers", "Guard Trainees"}
-      GetFood("Autumn Pot-au-feu").Customers = {"HL Academy Students"}
-      GetFood("Persimmon Pudding").Customers = {"HL Academy Professors", "West Artist Guild", "Guard Trainees", "War Lore Study Society (Grimoire)"}
-      GetFood("Gibier Curry Rice").Customers = {"HL Academy Students"}
-      GetFood("Apple Blue Aiyu Jelly").Customers = {"West Artist Guild", "Guard Trainees", "War Lore Study Society (Grimoire)"}
-      GetFood("Bison Lamian").Customers = {"HL Academy Students"}
-      GetFood("Horse Bao").Customers = {"HL Academy Students", "HL Academy Professors"}
-      GetFood("Snow Egg Foo Young").Customers = {"HL Academy Students", "Custom Shoemakers", "Alchemist Union (Grimoire)"}
-      GetFood("Traditional Kabutoyaki").Customers = {"Custom Shoemakers", "Alchemist Union (Grimoire)"}
-      GetFood("Snow Egg Oden").Customers = {"HL Academy Professors", "Alchemist Union (Grimoire)"}
-      GetFood("Crab Chazuke").Customers = {"Alchemist Union (Grimoire)"}
-      GetFood("Apple Matcha Shaved Ice").Customers = {"West Artist Guild", "Guard Trainees", "War Lore Study Society (Grimoire)"}
-      GetFood("Monster Fish Panino").Customers = {"Custom Shoemakers", "Alchemist Union (Grimoire)"}
-      GetFood("Apple Sauce Bison Steak").Customers = {"HL Academy Students", "Custom Shoemakers"}
-      GetFood("Crab Cream Croquette").Customers = {"Alchemist Union (Grimoire)"}
-      GetFood("Forest Paella").Customers = {"HL Academy Students", "Alchemist Union (Grimoire)"}
-      GetFood("Fried Whole Spider").Customers = {}
-      GetFood("Forest Fried Rice").Customers = {"HL Academy Students", "Alchemist Union (Grimoire)", "War Lore Study Society (Grimoire)"}
-      GetFood("Stewed Rhino").Customers = {"HL Academy Students"}
-      GetFood("Pepper Cockatrice").Customers = {"Alchemist Union (Grimoire)"}
-      GetFood("Shell Yakiniku").Customers = {"HL Academy Students", "Custom Shoemakers", "Alchemist Union (Grimoire)"}
-      GetFood("Strawberry Daikuku").Customers = {"HL Academy Professors", "West Artist Guild", "Guard Trainees", "War Lore Study Society (Grimoire)"}
-      GetFood("Sakura Tea").Customers = {"Bazaar Visitors (Event)"}
-      GetFood("Stone Bird Nikujaga").Customers = {"Alchemist Union (Grimoire)"}
-      GetFood("Scorpion Green Pasta").Customers = {}
-      GetFood("Honey German Potato").Customers = {"HL Academy Students"}
-      GetFood("Strawberry-Jam Loin Steak").Customers = {"Custom Shoemakers", "Alchemist Union (Grimoire)"}
-      GetFood("Rhino Meat Stew").Customers = {"HL Academy Students"}
-      GetFood("Nozuchi Soup").Customers = {"Custom Shoemakers"}
-      GetFood("Zhulongbao").Customers = {"HL Academy Professors", "Custom Shoemakers"}
-      GetFood("Nest and Mushroom Soup").Customers = {}
-      GetFood("Beggar's Fowl").Customers = {"HL Academy Professors", "Alchemist Union (Grimoire)"}
-      GetFood("Tortoise Takikomi Gohan").Customers = {"Custom Shoemakers"}
-      GetFood("Horse Shabu Shabu").Customers = {"HL Academy Students", "HL Academy Professors"}
-      GetFood("Sky Chawanmushi").Customers = {"HL Academy Professors", "Alchemist Union (Grimoire)"}
-      GetFood("Gem Nikogori").Customers = {"Custom Shoemakers", "Guard Trainees"}
-      GetFood("Ominous Aspic").Customers = {"Guard Trainees"}
-      GetFood("Triple Salisbury").Customers = {"Custom Shoemakers", "Alchemist Union (Grimoire)"}
-      GetFood("Steak Tartare").Customers = {"HL Academy Students", "Guard Trainees"}
-      GetFood("Stone Galette").Customers = {"Custom Shoemakers"}
-      GetFood("Dangerous Flowering Tea").Customers = {"War Lore Study Society (Grimoire)", "Bazaar Visitors (Event)"}
-      GetFood("Shumai").Customers = {"HL Academy Students", "HL Academy Professors"}
-      GetFood("Twice-cooked Meat").Customers = {"HL Academy Students", "Custom Shoemakers"}
-      GetFood("BBQ Lizard").Customers = {"HL Academy Professors", "Custom Shoemakers"}
-      GetFood("Hermit Suguta-zukuri").Customers = {"Guard Trainees", "War Lore Study Society (Grimoire)"}
-      GetFood("Black Osuimono").Customers = {"HL Academy Students"}
-      GetFood("Sumo Chank Pot").Customers = {"Custom Shoemakers"}
-      GetFood("Eastern Nishime").Customers = {}
-      GetFood("Caterpillar Casserole").Customers = {}
-      GetFood("Orange-Sauce Kaiju Steak").Customers = {"Custom Shoemakers"}
-      GetFood("Bamboo Sarmale").Customers = {"Custom Shoemakers"}
-      GetFood("Pumpkin Pie").Customers = {"Custom Shoemakers", "West Artist Guild", "Guard Trainees", "War Lore Study Society (Grimoire)"}
+    Private Shared Sub LoadWestWardCustomers()
+        GetFood("球獣肉とアスパラの中華炒め").Customers = {"国立ハイ・ラガード学院生", "オーダーメイド靴工房員"}
+        GetFood("軟骨揚げのシトロン餡かけ丼").Customers = {"錬金術師互助組合 (グリモア)"}
+        GetFood("シカ肉のタタキ風").Customers = {"国立ハイ・ラガード学院生", "オーダーメイド靴工房員", "衛士隊訓練生"}
+        GetFood("黒茶").Customers = {"学院開催のバザー客 (イベント)"}
+        GetFood("アゲハの姿佃煮").Customers = {}
+        GetFood("梟の軟骨からあげ").Customers = {"錬金術師互助組合 (グリモア)"}
+        GetFood("くるみ羊羹").Customers = {"ハイ・ラガード学院教授連", "西区美術家ギルド員", "衛士隊訓練生", "現代巫術研究会 (グリモア)"}
+        GetFood("鹿肉と樹海野菜のすき鍋").Customers = {"国立ハイ・ラガード学院生", "ハイ・ラガード学院教授連", "オーダーメイド靴工房員"}
+        GetFood("エスカルゴ焼シトロンソース添え").Customers = {"オーダーメイド靴工房員", "錬金術師互助組合 (グリモア)", "現代巫術研究会 (グリモア)"}
+        GetFood("ハイラガコーヒー").Customers = {"学院開催のバザー客 (イベント)"}
+        GetFood("クルミ入りライ麦パン").Customers = {"オーダーメイド靴工房員", "現代巫術研究会 (グリモア)"}
+        GetFood("シカ肉のステーキ").Customers = {"国立ハイ・ラガード学院生", "オーダーメイド靴工房員"}
+        GetFood("麻辣獄火鍋").Customers = {"国立ハイ・ラガード学院生", "ハイ・ラガード学院教授連"}
+        GetFood("鶏唐揚げの甘酢餡かけ").Customers = {"国立ハイ・ラガード学院生", "錬金術師互助組合 (グリモア)"}
+        GetFood("栗月餅").Customers = {"オーダーメイド靴工房員", "西区美術家ギルド員", "衛士隊訓練生", "現代巫術研究会 (グリモア)"}
+        GetFood("火龍果杏仁").Customers = {"西区美術家ギルド員", "衛士隊訓練生", "現代巫術研究会 (グリモア)"}
+        GetFood("怪しい石焼き鍋").Customers = {"ハイ・ラガード学院教授連", "錬金術師互助組合 (グリモア)"}
+        GetFood("巨猪の豚汁").Customers = {"国立ハイ・ラガード学院生"}
+        GetFood("鬼いが栗の茶巾絞り").Customers = {"ハイ・ラガード学院教授連", "西区美術家ギルド員", "衛士隊訓練生", "現代巫術研究会 (グリモア)"}
+        GetFood("紅葉狩り串団子").Customers = {"ハイ・ラガード学院教授連", "西区美術家ギルド員", "衛士隊訓練生", "現代巫術研究会 (グリモア)"}
+        GetFood("かみつきのサンドイッチ").Customers = {"オーダーメイド靴工房員", "衛士隊訓練生"}
+        GetFood("旬の秋野菜ポトフ").Customers = {"国立ハイ・ラガード学院生"}
+        GetFood("パーシモンプディング").Customers = {"ハイ・ラガード学院教授連", "西区美術家ギルド員", "衛士隊訓練生", "現代巫術研究会 (グリモア)"}
+        GetFood("ジビエカレーライス").Customers = {"国立ハイ・ラガード学院生"}
+        GetFood("リンゴ入り愛玉子風ブルーゼリー").Customers = {"西区美術家ギルド員", "衛士隊訓練生", "現代巫術研究会 (グリモア)"}
+        GetFood("野牛肉拉麺").Customers = {"国立ハイ・ラガード学院生"}
+        GetFood("馬肉中華包子").Customers = {"国立ハイ・ラガード学院生", "ハイ・ラガード学院教授連"}
+        GetFood("雪鳥の蟹玉").Customers = {"国立ハイ・ラガード学院生", "オーダーメイド靴工房員", "錬金術師互助組合 (グリモア)"}
+        GetFood("東国の伝統兜焼き").Customers = {"オーダーメイド靴工房員", "錬金術師互助組合 (グリモア)"}
+        GetFood("雪鳥卵の熱々おでん").Customers = {"ハイ・ラガード学院教授連", "錬金術師互助組合 (グリモア)"}
+        GetFood("カニの樹海茶漬け").Customers = {"錬金術師互助組合 (グリモア)"}
+        GetFood("林檎と抹茶のかき氷").Customers = {"西区美術家ギルド員", "衛士隊訓練生", "現代巫術研究会 (グリモア)"}
+        GetFood("発酵怪魚パニーノ").Customers = {"オーダーメイド靴工房員", "錬金術師互助組合 (グリモア)"}
+        GetFood("野牛ステーキのリンゴソース添え").Customers = {"国立ハイ・ラガード学院生", "オーダーメイド靴工房員"}
+        GetFood("カニクリームコロッケ").Customers = {"錬金術師互助組合 (グリモア)"}
+        GetFood("樹海パエリア").Customers = {"国立ハイ・ラガード学院生", "錬金術師互助組合 (グリモア)"}
+        GetFood("蜘蛛の姿揚げ").Customers = {}
+        GetFood("樹海鳥の雷炒飯").Customers = {"国立ハイ・ラガード学院生", "錬金術師互助組合 (グリモア)", "現代巫術研究会 (グリモア)"}
+        GetFood("森林サイ角煮").Customers = {"国立ハイ・ラガード学院生"}
+        GetFood("石化鳥と樹海野菜の細切り炒め").Customers = {"錬金術師互助組合 (グリモア)"}
+        GetFood("亀の甲羅焼き肉").Customers = {"国立ハイ・ラガード学院生", "オーダーメイド靴工房員", "錬金術師互助組合 (グリモア)"}
+        GetFood("大苺大福").Customers = {"ハイ・ラガード学院教授連", "西区美術家ギルド員", "衛士隊訓練生", "現代巫術研究会 (グリモア)"}
+        GetFood("樹海桜茶").Customers = {"学院開催のバザー客 (イベント)"}
+        GetFood("石化鳥の肉じゃが").Customers = {"錬金術師互助組合 (グリモア)"}
+        GetFood("サソリのグリーンパスタ").Customers = {}
+        GetFood("ハチミツジャーマンポテト").Customers = {"国立ハイ・ラガード学院生"}
+        GetFood("ももステーキの桜苺ジャム添え").Customers = {"オーダーメイド靴工房員", "錬金術師互助組合 (グリモア)"}
+        GetFood("サイ肉のとろとろシチュー").Customers = {"国立ハイ・ラガード学院生"}
+        GetFood("ノヅチ丸ごとスープ").Customers = {"オーダーメイド靴工房員"}
+        GetFood("宝龍包").Customers = {"ハイ・ラガード学院教授連", "オーダーメイド靴工房員"}
+        GetFood("皇帝ツバメの巣と岩茸の幻スープ").Customers = {}
+        GetFood("きょうか鶏").Customers = {"ハイ・ラガード学院教授連", "錬金術師互助組合 (グリモア)"}
+        GetFood("特製大釜の鎧竜炊き込みご飯").Customers = {"オーダーメイド靴工房員"}
+        GetFood("桜肉のしゃぶしゃぶ	").Customers = {"国立ハイ・ラガード学院生", "ハイ・ラガード学院教授連"}
+        GetFood("雲海山鳥の茶碗蒸し").Customers = {"ハイ・ラガード学院教授連", "錬金術師互助組合 (グリモア)"}
+        GetFood("宝石煮こごりのツバメの巣入り").Customers = {"オーダーメイド靴工房員", "衛士隊訓練生"}
+        GetFood("禍々しいアスピック").Customers = {"衛士隊訓練生"}
+        GetFood("３種食べ比べハンバーグ").Customers = {"オーダーメイド靴工房員", "錬金術師互助組合 (グリモア)"}
+        GetFood("タルタルステーキ").Customers = {"国立ハイ・ラガード学院生", "衛士隊訓練生"}
+        GetFood("ストーンガレット").Customers = {"オーダーメイド靴工房員"}
+        GetFood("危険な花茶").Customers = {"現代巫術研究会 (グリモア)", "学院開催のバザー客 (イベント)"}
+        GetFood("シュウマイ").Customers = {"国立ハイ・ラガード学院生", "ハイ・ラガード学院教授連"}
+        GetFood("樹海特選の回鍋肉").Customers = {"国立ハイ・ラガード学院生", "オーダーメイド靴工房員"}
+        GetFood("蜥蜴肉の蜜汁火方").Customers = {"ハイ・ラガード学院教授連", "オーダーメイド靴工房員"}
+        GetFood("古代ヤドカリの姿造り").Customers = {"衛士隊訓練生", "現代巫術研究会 (グリモア)"}
+        GetFood("黒獣のお吸い物").Customers = {"国立ハイ・ラガード学院生"}
+        GetFood("力士秘伝のちゃんこ風鍋").Customers = {"オーダーメイド靴工房員"}
+        GetFood("東国伝来の煮しめ").Customers = {}
+        GetFood("大芋虫のキャセロール").Customers = {}
+        GetFood("オレンジソースの怪獣ステーキ").Customers = {"オーダーメイド靴工房員"}
+        GetFood("タケノコが入ったサルマーレ").Customers = {"オーダーメイド靴工房員"}
+        GetFood("パンプキンパイ").Customers = {"オーダーメイド靴工房員", "西区美術家ギルド員", "衛士隊訓練生", "現代巫術研究会 (グリモア)"}
 
-   End Sub
+    End Sub
 
-   Private Shared Sub LoadNorthWardCustomers()
-      GetFood("Stir-Fried Roller").Customers = {}
-      GetFood("Citron Owl Bowl").Customers = {"Sunflower Arcade Workers", "Lagaard Lager Brewery", "Jukai Bushido Dojo (Grimoire)"}
-      GetFood("Seared Deer").Customers = {"Sunflower Arcade Workers"}
-      GetFood("Black Tea").Customers = {"Lagaard Ceramics Club", "Caravan Members (Event)"}
-      GetFood("Butterfly Tsukudani").Customers = {"Street Performers"}
-      GetFood("Owl Cartilage Karaage").Customers = {"Sunflower Arcade Workers", "Lagaard Lager Brewery"}
-      GetFood("Walnut Yokan").Customers = {"Blacksmith Craftsmen", "Sunflower Arcade Workers"}
-      GetFood("Forest Deer Sukiyaki").Customers = {"Lagaard Ceramics Club", "Caravan Members (Event)"}
-      GetFood("Escargot Citron").Customers = {"Lagaard Ceramics Club", "Street Performers"}
-      GetFood("Hi Lagaar Coffee").Customers = {}
-      GetFood("Walnut Bread").Customers = {}
-      GetFood("Deer Steak").Customers = {}
-      GetFood("Mala Inferno Pot").Customers = {"Lagaard Ceramics Club", "Troubadours For You (Grimoire)"}
-      GetFood("Sweet and Sour Moa").Customers = {"Sunflower Arcade Workers", "Lagaard Lager Brewery"}
-      GetFood("Chestnut Moon Cake").Customers = {"Sunflower Arcade Workers", "Troubadours For You (Grimoire)"}
-      GetFood("Dragon Jelly").Customers = {"Sunflower Arcade Workers"}
-      GetFood("Odd Ishiyaki Pot").Customers = {"Lagaard Ceramics Club", "Lagaard Lager Brewery"}
-      GetFood("Boar Tonjiru").Customers = {"Troubadours For You (Grimoire)"}
-      GetFood("Chestnut Chakin Shibori").Customers = {"Blacksmith Craftsmen", "Sunflower Arcade Workers"}
-      GetFood("Autumn Dango").Customers = {"Blacksmith Craftsmen", "Sunflower Arcade Workers", "Troubadours For You (Grimoire)"}
-      GetFood("Fanged Sandwich").Customers = {"Blacksmith Craftsmen", "Sunflower Arcade Workers", "Lagaard Lager Brewery"}
-      GetFood("Autumn Pot-au-feu").Customers = {}
-      GetFood("Persimmon Pudding").Customers = {"Blacksmith Craftsmen", "Sunflower Arcade Workers"}
-      GetFood("Gibier Curry Rice").Customers = {"Troubadours For You (Grimoire)", "Jukai Bushido Dojo (Grimoire)"}
-      GetFood("Apple Blue Aiyu Jelly").Customers = {"Sunflower Arcade Workers"}
-      GetFood("Bison Lamian").Customers = {"Troubadours For You (Grimoire)"}
-      GetFood("Horse Bao").Customers = {"Blacksmith Craftsmen"}
-      GetFood("Snow Egg Foo Young").Customers = {"Blacksmith Craftsmen"}
-      GetFood("Traditional Kabutoyaki").Customers = {}
-      GetFood("Snow Egg Oden").Customers = {"Blacksmith Craftsmen", "Troubadours For You (Grimoire)"}
-      GetFood("Crab Chazuke").Customers = {"Troubadours For You (Grimoire)", "Jukai Bushido Dojo (Grimoire)"}
-      GetFood("Apple Matcha Shaved Ice").Customers = {"Sunflower Arcade Workers"}
-      GetFood("Monster Fish Panino").Customers = {}
-      GetFood("Apple Sauce Bison Steak").Customers = {}
-      GetFood("Crab Cream Croquette").Customers = {"Sunflower Arcade Workers"}
-      GetFood("Forest Paella").Customers = {"Jukai Bushido Dojo (Grimoire)"}
-      GetFood("Fried Whole Spider").Customers = {"Street Performers", "Sunflower Arcade Workers", "Troubadours For You (Grimoire)"}
-      GetFood("Forest Fried Rice").Customers = {"Blacksmith Craftsmen", "Lagaard Lager Brewery", "Jukai Bushido Dojo (Grimoire)"}
-      GetFood("Stewed Rhino").Customers = {}
-      GetFood("Pepper Cockatrice").Customers = {"Lagaard Lager Brewery", "Troubadours For You (Grimoire)"}
-      GetFood("Shell Yakiniku").Customers = {"Lagaard Ceramics Club", "Lagaard Lager Brewery"}
-      GetFood("Strawberry Daikuku").Customers = {"Blacksmith Craftsmen", "Sunflower Arcade Workers"}
-      GetFood("Sakura Tea").Customers = {"Lagaard Ceramics Club", "Caravan Members (Event)"}
-      GetFood("Stone Bird Nikujaga").Customers = {"Lagaard Lager Brewery", "Troubadours For You (Grimoire)"}
-      GetFood("Scorpion Green Pasta").Customers = {"Blacksmith Craftsmen", "Street Performers"}
-      GetFood("Honey German Potato").Customers = {}
-      GetFood("Strawberry-Jam Loin Steak").Customers = {"Lagaard Ceramics Club", "Lagaard Lager Brewery", "Caravan Members (Event)"}
-      GetFood("Rhino Meat Stew").Customers = {"Troubadours For You (Grimoire)"}
-      GetFood("Nozuchi Soup").Customers = {"Street Performers", "Troubadours For You (Grimoire)"}
-      GetFood("Zhulongbao").Customers = {}
-      GetFood("Nest and Mushroom Soup").Customers = {}
-      GetFood("Beggar's Fowl").Customers = {"Lagaard Ceramics Club", "Blacksmith Craftsmen", "Lagaard Lager Brewery"}
-      GetFood("Tortoise Takikomi Gohan").Customers = {"Lagaard Ceramics Club"}
-      GetFood("Horse Shabu Shabu").Customers = {"Lagaard Ceramics Club"}
-      GetFood("Sky Chawanmushi").Customers = {"Blacksmith Craftsmen", "Lagaard Lager Brewery"}
-      GetFood("Gem Nikogori").Customers = {"Lagaard Ceramics Club", "Sunflower Arcade Workers"}
-      GetFood("Ominous Aspic").Customers = {"Sunflower Arcade Workers", "Lagaard Lager Brewery"}
-      GetFood("Triple Salisbury").Customers = {"Lagaard Lager Brewery"}
-      GetFood("Steak Tartare").Customers = {"Blacksmith Craftsmen", "Sunflower Arcade Workers"}
-      GetFood("Stone Galette").Customers = {"Lagaard Ceramics Club", "Blacksmith Craftsmen"}
-      GetFood("Dangerous Flowering Tea").Customers = {"Lagaard Ceramics Club", "Caravan Members (Event)"}
-      GetFood("Shumai").Customers = {"Blacksmith Craftsmen"}
-      GetFood("Twice-cooked Meat").Customers = {"Lagaard Ceramics Club", "Caravan Members (Event)"}
-      GetFood("BBQ Lizard").Customers = {"Blacksmith Craftsmen", "Street Performers"}
-      GetFood("Hermit Suguta-zukuri").Customers = {"Lagaard Ceramics Club", "Street Performers", "Sunflower Arcade Workers"}
-      GetFood("Black Osuimono").Customers = {"Troubadours For You (Grimoire)"}
-      GetFood("Sumo Chank Pot").Customers = {}
-      GetFood("Eastern Nishime").Customers = {"Street Performers"}
-      GetFood("Caterpillar Casserole").Customers = {"Lagaard Ceramics Club", "Street Performers", "Caravan Members (Event)"}
-      GetFood("Orange-Sauce Kaiju Steak").Customers = {}
-      GetFood("Bamboo Sarmale").Customers = {}
-      GetFood("Pumpkin Pie").Customers = {"Street Performers", "Sunflower Arcade Workers"}
-   End Sub
+    Private Shared Sub LoadNorthWardCustomers()
+        GetFood("球獣肉とアスパラの中華炒め").Customers = {}
+        GetFood("軟骨揚げのシトロン餡かけ丼").Customers = {"ひまわり商店街の店員", "ハイラガ酒蔵の蔵人", "樹海流武士道場の門徒 (グリモア)"}
+        GetFood("シカ肉のタタキ風").Customers = {"ひまわり商店街の店員"}
+        GetFood("黒茶").Customers = {"ラガード陶芸俱楽部", "訪問中のキャラバン隊員 (イベント)"}
+        GetFood("アゲハの姿佃煮").Customers = {"大道芸人の一座"}
+        GetFood("梟の軟骨からあげ").Customers = {"ひまわり商店街の店員", "ハイラガ酒蔵の蔵人"}
+        GetFood("くるみ羊羹").Customers = {"鉄工鍛冶ギルドの職人", "ひまわり商店街の店員"}
+        GetFood("鹿肉と樹海野菜のすき鍋").Customers = {"ラガード陶芸俱楽部", "訪問中のキャラバン隊員 (イベント)"}
+        GetFood("エスカルゴ焼シトロンソース添え").Customers = {"ラガード陶芸俱楽部", "大道芸人の一座"}
+        GetFood("ハイラガコーヒー").Customers = {}
+        GetFood("クルミ入りライ麦パン").Customers = {}
+        GetFood("シカ肉のステーキ").Customers = {}
+        GetFood("麻辣獄火鍋").Customers = {"ラガード陶芸俱楽部", "アナタのためのバード隊 (グリモア)"}
+        GetFood("鶏唐揚げの甘酢餡かけ").Customers = {"ひまわり商店街の店員", "ハイラガ酒蔵の蔵人"}
+        GetFood("栗月餅").Customers = {"ひまわり商店街の店員", "アナタのためのバード隊 (グリモア)"}
+        GetFood("火龍果杏仁").Customers = {"ひまわり商店街の店員"}
+        GetFood("怪しい石焼き鍋").Customers = {"ラガード陶芸俱楽部", "ハイラガ酒蔵の蔵人"}
+        GetFood("巨猪の豚汁").Customers = {"アナタのためのバード隊 (グリモア)"}
+        GetFood("鬼いが栗の茶巾絞り").Customers = {"鉄工鍛冶ギルドの職人", "ひまわり商店街の店員"}
+        GetFood("紅葉狩り串団子").Customers = {"鉄工鍛冶ギルドの職人", "ひまわり商店街の店員", "アナタのためのバード隊 (グリモア)"}
+        GetFood("かみつきのサンドイッチ").Customers = {"鉄工鍛冶ギルドの職人", "ひまわり商店街の店員", "ハイラガ酒蔵の蔵人"}
+        GetFood("旬の秋野菜ポトフ").Customers = {}
+        GetFood("パーシモンプディング").Customers = {"鉄工鍛冶ギルドの職人", "ひまわり商店街の店員"}
+        GetFood("ジビエカレーライス").Customers = {"アナタのためのバード隊 (グリモア)", "樹海流武士道場の門徒 (グリモア)"}
+        GetFood("リンゴ入り愛玉子風ブルーゼリー").Customers = {"ひまわり商店街の店員"}
+        GetFood("野牛肉拉麺").Customers = {"アナタのためのバード隊 (グリモア)"}
+        GetFood("馬肉中華包子").Customers = {"鉄工鍛冶ギルドの職人"}
+        GetFood("雪鳥の蟹玉").Customers = {"鉄工鍛冶ギルドの職人"}
+        GetFood("東国の伝統兜焼き").Customers = {}
+        GetFood("雪鳥卵の熱々おでん").Customers = {"鉄工鍛冶ギルドの職人", "アナタのためのバード隊 (グリモア)"}
+        GetFood("カニの樹海茶漬け").Customers = {"アナタのためのバード隊 (グリモア)", "樹海流武士道場の門徒 (グリモア)"}
+        GetFood("林檎と抹茶のかき氷").Customers = {"ひまわり商店街の店員"}
+        GetFood("発酵怪魚パニーノ").Customers = {}
+        GetFood("野牛ステーキのリンゴソース添え").Customers = {}
+        GetFood("カニクリームコロッケ").Customers = {"ひまわり商店街の店員"}
+        GetFood("樹海パエリア").Customers = {"樹海流武士道場の門徒 (グリモア)"}
+        GetFood("蜘蛛の姿揚げ").Customers = {"大道芸人の一座", "ひまわり商店街の店員", "アナタのためのバード隊 (グリモア)"}
+        GetFood("樹海鳥の雷炒飯").Customers = {"鉄工鍛冶ギルドの職人", "ハイラガ酒蔵の蔵人", "樹海流武士道場の門徒 (グリモア)"}
+        GetFood("森林サイ角煮").Customers = {}
+        GetFood("石化鳥と樹海野菜の細切り炒め").Customers = {"ハイラガ酒蔵の蔵人", "アナタのためのバード隊 (グリモア)"}
+        GetFood("亀の甲羅焼き肉").Customers = {"ラガード陶芸俱楽部", "ハイラガ酒蔵の蔵人"}
+        GetFood("大苺大福").Customers = {"鉄工鍛冶ギルドの職人", "ひまわり商店街の店員"}
+        GetFood("樹海桜茶").Customers = {"ラガード陶芸俱楽部", "訪問中のキャラバン隊員 (イベント)"}
+        GetFood("石化鳥の肉じゃが").Customers = {"ハイラガ酒蔵の蔵人", "アナタのためのバード隊 (グリモア)"}
+        GetFood("サソリのグリーンパスタ").Customers = {"鉄工鍛冶ギルドの職人", "大道芸人の一座"}
+        GetFood("ハチミツジャーマンポテト").Customers = {}
+        GetFood("ももステーキの桜苺ジャム添え").Customers = {"ラガード陶芸俱楽部", "ハイラガ酒蔵の蔵人", "訪問中のキャラバン隊員 (イベント)"}
+        GetFood("サイ肉のとろとろシチュー").Customers = {"アナタのためのバード隊 (グリモア)"}
+        GetFood("ノヅチ丸ごとスープ").Customers = {"大道芸人の一座", "アナタのためのバード隊 (グリモア)"}
+        GetFood("宝龍包").Customers = {}
+        GetFood("皇帝ツバメの巣と岩茸の幻スープ").Customers = {}
+        GetFood("きょうか鶏").Customers = {"ラガード陶芸俱楽部", "鉄工鍛冶ギルドの職人", "ハイラガ酒蔵の蔵人"}
+        GetFood("特製大釜の鎧竜炊き込みご飯").Customers = {"ラガード陶芸俱楽部"}
+        GetFood("桜肉のしゃぶしゃぶ	").Customers = {"ラガード陶芸俱楽部"}
+        GetFood("雲海山鳥の茶碗蒸し").Customers = {"鉄工鍛冶ギルドの職人", "ハイラガ酒蔵の蔵人"}
+        GetFood("宝石煮こごりのツバメの巣入り").Customers = {"ラガード陶芸俱楽部", "ひまわり商店街の店員"}
+        GetFood("禍々しいアスピック").Customers = {"ひまわり商店街の店員", "ハイラガ酒蔵の蔵人"}
+        GetFood("３種食べ比べハンバーグ").Customers = {"ハイラガ酒蔵の蔵人"}
+        GetFood("タルタルステーキ").Customers = {"鉄工鍛冶ギルドの職人", "ひまわり商店街の店員"}
+        GetFood("ストーンガレット").Customers = {"ラガード陶芸俱楽部", "鉄工鍛冶ギルドの職人"}
+        GetFood("危険な花茶").Customers = {"ラガード陶芸俱楽部", "訪問中のキャラバン隊員 (イベント)"}
+        GetFood("シュウマイ").Customers = {"鉄工鍛冶ギルドの職人"}
+        GetFood("樹海特選の回鍋肉").Customers = {"ラガード陶芸俱楽部", "訪問中のキャラバン隊員 (イベント)"}
+        GetFood("蜥蜴肉の蜜汁火方").Customers = {"鉄工鍛冶ギルドの職人", "大道芸人の一座"}
+        GetFood("古代ヤドカリの姿造り").Customers = {"ラガード陶芸俱楽部", "大道芸人の一座", "ひまわり商店街の店員"}
+        GetFood("黒獣のお吸い物").Customers = {"アナタのためのバード隊 (グリモア)"}
+        GetFood("力士秘伝のちゃんこ風鍋").Customers = {}
+        GetFood("東国伝来の煮しめ").Customers = {"大道芸人の一座"}
+        GetFood("大芋虫のキャセロール").Customers = {"ラガード陶芸俱楽部", "大道芸人の一座", "訪問中のキャラバン隊員 (イベント)"}
+        GetFood("オレンジソースの怪獣ステーキ").Customers = {}
+        GetFood("タケノコが入ったサルマーレ").Customers = {}
+        GetFood("パンプキンパイ").Customers = {"大道芸人の一座", "ひまわり商店街の店員"}
+    End Sub
 
-   Private Shared Sub LoadUptownCustomers()
-      GetFood("Stir-Fried Roller").Customers = {"Castle Guards", "Golden Protectors (Grimoire)"}
-      GetFood("Citron Owl Bowl").Customers = {"Aristocrat Club"}
-      GetFood("Seared Deer").Customers = {"Aristocrat Club", "Castle Guards"}
-      GetFood("Black Tea").Customers = {"Shoe Shiners", "Duchy Maid Union", "Princess Tea Party (Grimoire)", "Golden Protectors (Grimoire)"}
-      GetFood("Butterfly Tsukudani").Customers = {"Shoe Shiners", "Duchy Maid Union", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Owl Cartilage Karaage").Customers = {"Aristocrat Club"}
-      GetFood("Walnut Yokan").Customers = {"Aristocrat Club", "Shoe Shiners", "Duchy Maid Union"}
-      GetFood("Forest Deer Sukiyaki").Customers = {"Shoe Shiners", "Uptown Ladies Club", "Castle Guards", "Princess Tea Party (Grimoire)", "Golden Protectors (Grimoire)"}
-      GetFood("Escargot Citron").Customers = {"Aristocrat Club", "Castle Guards"}
-      GetFood("Hi Lagaar Coffee").Customers = {"Shoe Shiners", "Duchy Maid Union", "Golden Protectors (Grimoire)"}
-      GetFood("Walnut Bread").Customers = {"Aristocrat Club", "Castle Guards"}
-      GetFood("Deer Steak").Customers = {"Castle Guards", "Golden Protectors (Grimoire)"}
-      GetFood("Mala Inferno Pot").Customers = {"Shoe Shiners", "Duchy Maid Union", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Sweet and Sour Moa").Customers = {"Golden Protectors (Grimoire)"}
-      GetFood("Chestnut Moon Cake").Customers = {"Aristocrat Club", "Shoe Shiners", "Duchy Maid Union", "Castle Guards"}
-      GetFood("Dragon Jelly").Customers = {"Aristocrat Club", "Duchy Maid Union"}
-      GetFood("Odd Ishiyaki Pot").Customers = {"Uptown Ladies Club"}
-      GetFood("Boar Tonjiru").Customers = {"Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Chestnut Chakin Shibori").Customers = {"Aristocrat Club", "Shoe Shiners", "Duchy Maid Union"}
-      GetFood("Autumn Dango").Customers = {"Aristocrat Club", "Duchy Maid Union"}
-      GetFood("Fanged Sandwich").Customers = {"Castle Guards", "Golden Protectors (Grimoire)"}
-      GetFood("Autumn Pot-au-feu").Customers = {"Shoe Shiners", "Duchy Maid Union", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Persimmon Pudding").Customers = {"Aristocrat Club", "Duchy Maid Union"}
-      GetFood("Gibier Curry Rice").Customers = {"Shoe Shiners", "Duchy Maid Union", "Uptown Ladies Club", "Princess Tea Party (Grimoire)", "Golden Protectors (Grimoire)"}
-      GetFood("Apple Blue Aiyu Jelly").Customers = {"Aristocrat Club", "Duchy Maid Union", "Foreign Ambassadors (Event)"}
-      GetFood("Bison Lamian").Customers = {"Uptown Ladies Club", "Foreign Ambassadors (Event)"}
-      GetFood("Horse Bao").Customers = {"Shoe Shiners", "Golden Protectors (Grimoire)"}
-      GetFood("Snow Egg Foo Young").Customers = {"Castle Guards"}
-      GetFood("Traditional Kabutoyaki").Customers = {"Shoe Shiners", "Castle Guards", "Golden Protectors (Grimoire)"}
-      GetFood("Snow Egg Oden").Customers = {"Shoe Shiners", "Duchy Maid Union", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Crab Chazuke").Customers = {"Uptown Ladies Club", "Golden Protectors (Grimoire)", "Foreign Ambassadors (Event)"}
-      GetFood("Apple Matcha Shaved Ice").Customers = {"Aristocrat Club", "Duchy Maid Union", "Foreign Ambassadors (Event)"}
-      GetFood("Monster Fish Panino").Customers = {"Castle Guards", "Foreign Ambassadors (Event)"}
-      GetFood("Apple Sauce Bison Steak").Customers = {"Aristocrat Club", "Castle Guards"}
-      GetFood("Crab Cream Croquette").Customers = {"Golden Protectors (Grimoire)", "Foreign Ambassadors (Event)"}
-      GetFood("Forest Paella").Customers = {"Shoe Shiners", "Duchy Maid Union", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Fried Whole Spider").Customers = {"Shoe Shiners", "Golden Protectors (Grimoire)"}
-      GetFood("Forest Fried Rice").Customers = {}
-      GetFood("Stewed Rhino").Customers = {"Shoe Shiners", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Pepper Cockatrice").Customers = {"Shoe Shiners", "Duchy Maid Union", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Shell Yakiniku").Customers = {"Castle Guards"}
-      GetFood("Strawberry Daikuku").Customers = {"Aristocrat Club", "Duchy Maid Union"}
-      GetFood("Sakura Tea").Customers = {"Princess Tea Party (Grimoire)"}
-      GetFood("Stone Bird Nikujaga").Customers = {"Shoe Shiners", "Duchy Maid Union", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Scorpion Green Pasta").Customers = {"Golden Protectors (Grimoire)"}
-      GetFood("Honey German Potato").Customers = {"Shoe Shiners", "Duchy Maid Union", "Golden Protectors (Grimoire)"}
-      GetFood("Strawberry-Jam Loin Steak").Customers = {"Aristocrat Club", "Castle Guards", "Princess Tea Party (Grimoire)"}
-      GetFood("Rhino Meat Stew").Customers = {"Shoe Shiners", "Duchy Maid Union", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Nozuchi Soup").Customers = {"Uptown Ladies Club", "Castle Guards", "Golden Protectors (Grimoire)", "Foreign Ambassadors (Event)"}
-      GetFood("Zhulongbao").Customers = {"Shoe Shiners", "Castle Guards", "Golden Protectors (Grimoire)"}
-      GetFood("Nest and Mushroom Soup").Customers = {"Shoe Shiners", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Beggar's Fowl").Customers = {}
-      GetFood("Tortoise Takikomi Gohan").Customers = {"Castle Guards"}
-      GetFood("Horse Shabu Shabu").Customers = {"Uptown Ladies Club", "Foreign Ambassadors (Event)"}
-      GetFood("Sky Chawanmushi").Customers = {"Shoe Shiners", "Golden Protectors (Grimoire)"}
-      GetFood("Gem Nikogori").Customers = {"Uptown Ladies Club", "Castle Guards"}
-      GetFood("Ominous Aspic").Customers = {"Uptown Ladies Club", "Foreign Ambassadors (Event)"}
-      GetFood("Triple Salisbury").Customers = {"Castle Guards"}
-      GetFood("Steak Tartare").Customers = {}
-      GetFood("Stone Galette").Customers = {"Castle Guards", "Golden Protectors (Grimoire)"}
-      GetFood("Dangerous Flowering Tea").Customers = {"Aristocrat Club", "Princess Tea Party (Grimoire)"}
-      GetFood("Shumai").Customers = {"Shoe Shiners", "Golden Protectors (Grimoire)"}
-      GetFood("Twice-cooked Meat").Customers = {"Castle Guards", "Princess Tea Party (Grimoire)", "Golden Protectors (Grimoire)"}
-      GetFood("BBQ Lizard").Customers = {"Castle Guards", "Golden Protectors (Grimoire)"}
-      GetFood("Hermit Suguta-zukuri").Customers = {"Aristocrat Club"}
-      GetFood("Black Osuimono").Customers = {"Aristocrat Club", "Uptown Ladies Club"}
-      GetFood("Sumo Chank Pot").Customers = {"Uptown Ladies Club", "Castle Guards", "Golden Protectors (Grimoire)"}
-      GetFood("Eastern Nishime").Customers = {"Shoe Shiners", "Uptown Ladies Club", "Golden Protectors (Grimoire)"}
-      GetFood("Caterpillar Casserole").Customers = {"Shoe Shiners", "Uptown Ladies Club", "Princess Tea Party (Grimoire)", "Golden Protectors (Grimoire)"}
-      GetFood("Orange-Sauce Kaiju Steak").Customers = {"Aristocrat Club", "Castle Guards"}
-      GetFood("Bamboo Sarmale").Customers = {"Uptown Ladies Club", "Castle Guards", "Golden Protectors (Grimoire)"}
-      GetFood("Pumpkin Pie").Customers = {"Aristocrat Club", "Duchy Maid Union"}
-   End Sub
+    Private Shared Sub LoadUptownCustomers()
+        GetFood("球獣肉とアスパラの中華炒め").Customers = {"城付き近衛兵団員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("軟骨揚げのシトロン餡かけ丼").Customers = {"貴族子弟の社交クラブ"}
+        GetFood("シカ肉のタタキ風").Customers = {"貴族子弟の社交クラブ", "城付き近衛兵団員"}
+        GetFood("黒茶").Customers = {"街路の靴磨き職人", "公国メイド組合員", "プリンセス茶会のメンバー (グリモア)", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("アゲハの姿佃煮").Customers = {"街路の靴磨き職人", "公国メイド組合員", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("梟の軟骨からあげ").Customers = {"貴族子弟の社交クラブ"}
+        GetFood("くるみ羊羹").Customers = {"貴族子弟の社交クラブ", "街路の靴磨き職人", "公国メイド組合員"}
+        GetFood("鹿肉と樹海野菜のすき鍋").Customers = {"街路の靴磨き職人", "中央区婦人会", "城付き近衛兵団員", "プリンセス茶会のメンバー (グリモア)", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("エスカルゴ焼シトロンソース添え").Customers = {"貴族子弟の社交クラブ", "城付き近衛兵団員"}
+        GetFood("ハイラガコーヒー").Customers = {"街路の靴磨き職人", "公国メイド組合員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("クルミ入りライ麦パン").Customers = {"貴族子弟の社交クラブ", "城付き近衛兵団員"}
+        GetFood("シカ肉のステーキ").Customers = {"城付き近衛兵団員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("麻辣獄火鍋").Customers = {"街路の靴磨き職人", "公国メイド組合員", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("鶏唐揚げの甘酢餡かけ").Customers = {"黄金樹聖騎士団員 (グリモア)"}
+        GetFood("栗月餅").Customers = {"貴族子弟の社交クラブ", "街路の靴磨き職人", "公国メイド組合員", "城付き近衛兵団員"}
+        GetFood("火龍果杏仁").Customers = {"貴族子弟の社交クラブ", "公国メイド組合員"}
+        GetFood("怪しい石焼き鍋").Customers = {"中央区婦人会"}
+        GetFood("巨猪の豚汁").Customers = {"中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("鬼いが栗の茶巾絞り").Customers = {"貴族子弟の社交クラブ", "街路の靴磨き職人", "公国メイド組合員"}
+        GetFood("紅葉狩り串団子").Customers = {"貴族子弟の社交クラブ", "公国メイド組合員"}
+        GetFood("かみつきのサンドイッチ").Customers = {"城付き近衛兵団員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("旬の秋野菜ポトフ").Customers = {"街路の靴磨き職人", "公国メイド組合員", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("パーシモンプディング").Customers = {"貴族子弟の社交クラブ", "公国メイド組合員"}
+        GetFood("ジビエカレーライス").Customers = {"街路の靴磨き職人", "公国メイド組合員", "中央区婦人会", "プリンセス茶会のメンバー (グリモア)", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("リンゴ入り愛玉子風ブルーゼリー").Customers = {"貴族子弟の社交クラブ", "公国メイド組合員", "逗留中の外交使節団 (イベント)"}
+        GetFood("野牛肉拉麺").Customers = {"中央区婦人会", "逗留中の外交使節団 (イベント)"}
+        GetFood("馬肉中華包子").Customers = {"街路の靴磨き職人", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("雪鳥の蟹玉").Customers = {"城付き近衛兵団員"}
+        GetFood("東国の伝統兜焼き").Customers = {"街路の靴磨き職人", "城付き近衛兵団員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("雪鳥卵の熱々おでん").Customers = {"街路の靴磨き職人", "公国メイド組合員", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("カニの樹海茶漬け").Customers = {"中央区婦人会", "黄金樹聖騎士団員 (グリモア)", "逗留中の外交使節団 (イベント)"}
+        GetFood("林檎と抹茶のかき氷").Customers = {"貴族子弟の社交クラブ", "公国メイド組合員", "逗留中の外交使節団 (イベント)"}
+        GetFood("発酵怪魚パニーノ").Customers = {"城付き近衛兵団員", "逗留中の外交使節団 (イベント)"}
+        GetFood("野牛ステーキのリンゴソース添え").Customers = {"貴族子弟の社交クラブ", "城付き近衛兵団員"}
+        GetFood("カニクリームコロッケ").Customers = {"黄金樹聖騎士団員 (グリモア)", "逗留中の外交使節団 (イベント)"}
+        GetFood("樹海パエリア").Customers = {"街路の靴磨き職人", "公国メイド組合員", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("蜘蛛の姿揚げ").Customers = {"街路の靴磨き職人", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("樹海鳥の雷炒飯").Customers = {}
+        GetFood("森林サイ角煮").Customers = {"街路の靴磨き職人", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("石化鳥と樹海野菜の細切り炒め").Customers = {"街路の靴磨き職人", "公国メイド組合員", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("亀の甲羅焼き肉").Customers = {"城付き近衛兵団員"}
+        GetFood("大苺大福").Customers = {"貴族子弟の社交クラブ", "公国メイド組合員"}
+        GetFood("樹海桜茶").Customers = {"プリンセス茶会のメンバー (グリモア)"}
+        GetFood("石化鳥の肉じゃが").Customers = {"街路の靴磨き職人", "公国メイド組合員", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("サソリのグリーンパスタ").Customers = {"黄金樹聖騎士団員 (グリモア)"}
+        GetFood("ハチミツジャーマンポテト").Customers = {"街路の靴磨き職人", "公国メイド組合員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("ももステーキの桜苺ジャム添え").Customers = {"貴族子弟の社交クラブ", "城付き近衛兵団員", "プリンセス茶会のメンバー (グリモア)"}
+        GetFood("サイ肉のとろとろシチュー").Customers = {"街路の靴磨き職人", "公国メイド組合員", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("ノヅチ丸ごとスープ").Customers = {"中央区婦人会", "城付き近衛兵団員", "黄金樹聖騎士団員 (グリモア)", "逗留中の外交使節団 (イベント)"}
+        GetFood("宝龍包").Customers = {"街路の靴磨き職人", "城付き近衛兵団員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("皇帝ツバメの巣と岩茸の幻スープ").Customers = {"街路の靴磨き職人", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("きょうか鶏").Customers = {}
+        GetFood("特製大釜の鎧竜炊き込みご飯").Customers = {"城付き近衛兵団員"}
+        GetFood("桜肉のしゃぶしゃぶ	").Customers = {"中央区婦人会", "逗留中の外交使節団 (イベント)"}
+        GetFood("雲海山鳥の茶碗蒸し").Customers = {"街路の靴磨き職人", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("宝石煮こごりのツバメの巣入り").Customers = {"中央区婦人会", "城付き近衛兵団員"}
+        GetFood("禍々しいアスピック").Customers = {"中央区婦人会", "逗留中の外交使節団 (イベント)"}
+        GetFood("３種食べ比べハンバーグ").Customers = {"城付き近衛兵団員"}
+        GetFood("タルタルステーキ").Customers = {}
+        GetFood("ストーンガレット").Customers = {"城付き近衛兵団員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("危険な花茶").Customers = {"貴族子弟の社交クラブ", "プリンセス茶会のメンバー (グリモア)"}
+        GetFood("シュウマイ").Customers = {"街路の靴磨き職人", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("樹海特選の回鍋肉").Customers = {"城付き近衛兵団員", "プリンセス茶会のメンバー (グリモア)", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("蜥蜴肉の蜜汁火方").Customers = {"城付き近衛兵団員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("古代ヤドカリの姿造り").Customers = {"貴族子弟の社交クラブ"}
+        GetFood("黒獣のお吸い物").Customers = {"貴族子弟の社交クラブ", "中央区婦人会"}
+        GetFood("力士秘伝のちゃんこ風鍋").Customers = {"中央区婦人会", "城付き近衛兵団員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("東国伝来の煮しめ").Customers = {"街路の靴磨き職人", "中央区婦人会", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("大芋虫のキャセロール").Customers = {"街路の靴磨き職人", "中央区婦人会", "プリンセス茶会のメンバー (グリモア)", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("オレンジソースの怪獣ステーキ").Customers = {"貴族子弟の社交クラブ", "城付き近衛兵団員"}
+        GetFood("タケノコが入ったサルマーレ").Customers = {"中央区婦人会", "城付き近衛兵団員", "黄金樹聖騎士団員 (グリモア)"}
+        GetFood("パンプキンパイ").Customers = {"貴族子弟の社交クラブ", "公国メイド組合員"}
+    End Sub
 
-   Private Shared Sub LoadSlumCustomers()
-      GetFood("Stir-Fried Roller").Customers = {"Open-Air Class Students"}
-      GetFood("Citron Owl Bowl").Customers = {"Loitering Youths", "Patrolling Guards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Seared Deer").Customers = {"Shady Merchants"}
-      GetFood("Black Tea").Customers = {"Shady Merchants"}
-      GetFood("Butterfly Tsukudani").Customers = {"Midday Drunkards", "Shady Merchants"}
-      GetFood("Owl Cartilage Karaage").Customers = {"Shady Merchants", "Open-Air Class Students", "Patrolling Guards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Walnut Yokan").Customers = {"Shady Merchants"}
-      GetFood("Forest Deer Sukiyaki").Customers = {"Midday Drunkards", "Open-Air Class Students"}
-      GetFood("Escargot Citron").Customers = {"Midday Drunkards", "Hexing Missionaries (Grimoire)"}
-      GetFood("Hi Lagaar Coffee").Customers = {"Shady Merchants"}
-      GetFood("Walnut Bread").Customers = {"Shady Merchants"}
-      GetFood("Deer Steak").Customers = {}
-      GetFood("Mala Inferno Pot").Customers = {"Midday Drunkards"}
-      GetFood("Sweet and Sour Moa").Customers = {"Open-Air Class Students", "Patrolling Guards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Chestnut Moon Cake").Customers = {"Loitering Youths"}
-      GetFood("Dragon Jelly").Customers = {}
-      GetFood("Odd Ishiyaki Pot").Customers = {"Midday Drunkards", "Patrolling Guards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Boar Tonjiru").Customers = {"Midday Drunkards"}
-      GetFood("Chestnut Chakin Shibori").Customers = {}
-      GetFood("Autumn Dango").Customers = {"Loitering Youths", "Pending Immigrants (Event)"}
-      GetFood("Fanged Sandwich").Customers = {"Patrolling Guards"}
-      GetFood("Autumn Pot-au-feu").Customers = {"Midday Drunkards", "Open-Air Class Students"}
-      GetFood("Persimmon Pudding").Customers = {"Pending Immigrants (Event)"}
-      GetFood("Gibier Curry Rice").Customers = {"Loitering Youths", "Midday Drunkards"}
-      GetFood("Apple Blue Aiyu Jelly").Customers = {"Shady Merchants", "Pending Immigrants (Event)"}
-      GetFood("Bison Lamian").Customers = {"Shady Merchants"}
-      GetFood("Horse Bao").Customers = {}
-      GetFood("Snow Egg Foo Young").Customers = {"Midday Drunkards", "Open-Air Class Students", "Hexing Missionaries (Grimoire)"}
-      GetFood("Traditional Kabutoyaki").Customers = {"Midday Drunkards", "Hexing Missionaries (Grimoire)"}
-      GetFood("Snow Egg Oden").Customers = {"Midday Drunkards"}
-      GetFood("Crab Chazuke").Customers = {"Loitering Youths", "Midday Drunkards", "Shady Merchants", "Hexing Missionaries (Grimoire)"}
-      GetFood("Apple Matcha Shaved Ice").Customers = {"Shady Merchants"}
-      GetFood("Monster Fish Panino").Customers = {"Midday Drunkards", "Shady Merchants", "Hexing Missionaries (Grimoire)"}
-      GetFood("Apple Sauce Bison Steak").Customers = {}
-      GetFood("Crab Cream Croquette").Customers = {"Midday Drunkards", "Shady Merchants", "Patrolling Guards", "Hexing Missionaries (Grimoire)"}
-      GetFood("Forest Paella").Customers = {"Loitering Youths", "Midday Drunkards"}
-      GetFood("Fried Whole Spider").Customers = {"Loitering Youths", "Patrolling Guards", "Hexing Missionaries (Grimoire)"}
-      GetFood("Forest Fried Rice").Customers = {"Loitering Youths", "Open-Air Class Students", "Dark Hunter Union (Grimoire)"}
-      GetFood("Stewed Rhino").Customers = {"Midday Drunkards", "Shady Merchants"}
-      GetFood("Pepper Cockatrice").Customers = {"Loitering Youths", "Open-Air Class Students", "Patrolling Guards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Shell Yakiniku").Customers = {"Patrolling Guards"}
-      GetFood("Strawberry Daikuku").Customers = {"Shady Merchants"}
-      GetFood("Sakura Tea").Customers = {"Shady Merchants"}
-      GetFood("Stone Bird Nikujaga").Customers = {"Loitering Youths", "Midday Drunkards", "Patrolling Guards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Scorpion Green Pasta").Customers = {"Hexing Missionaries (Grimoire)"}
-      GetFood("Honey German Potato").Customers = {"Shady Merchants", "Open-Air Class Students"}
-      GetFood("Strawberry-Jam Loin Steak").Customers = {"Patrolling Guards"}
-      GetFood("Rhino Meat Stew").Customers = {"Loitering Youths", "Midday Drunkards"}
-      GetFood("Nozuchi Soup").Customers = {"Midday Drunkards", "Shady Merchants", "Dark Hunter Union (Grimoire)"}
-      GetFood("Zhulongbao").Customers = {"Open-Air Class Students", "Dark Hunter Union (Grimoire)"}
-      GetFood("Nest and Mushroom Soup").Customers = {"Open-Air Class Students"}
-      GetFood("Beggar's Fowl").Customers = {"Patrolling Guards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Tortoise Takikomi Gohan").Customers = {"Loitering Youths", "Dark Hunter Union (Grimoire)"}
-      GetFood("Horse Shabu Shabu").Customers = {"Shady Merchants"}
-      GetFood("Sky Chawanmushi").Customers = {"Open-Air Class Students", "Patrolling Guards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Gem Nikogori").Customers = {"Midday Drunkards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Ominous Aspic").Customers = {"Midday Drunkards", "Shady Merchants", "Patrolling Guards", "Dark Hunter Union (Grimoire)", "Pending Immigrants (Event)"}
-      GetFood("Triple Salisbury").Customers = {"Patrolling Guards"}
-      GetFood("Steak Tartare").Customers = {}
-      GetFood("Stone Galette").Customers = {}
-      GetFood("Dangerous Flowering Tea").Customers = {}
-      GetFood("Shumai").Customers = {"Open-Air Class Students"}
-      GetFood("Twice-cooked Meat").Customers = {"Open-Air Class Students", "Dark Hunter Union (Grimoire)"}
-      GetFood("BBQ Lizard").Customers = {"Shady Merchants", "Hexing Missionaries (Grimoire)", "Dark Hunter Union (Grimoire)"}
-      GetFood("Hermit Suguta-zukuri").Customers = {"Midday Drunkards", "Hexing Missionaries (Grimoire)"}
-      GetFood("Black Osuimono").Customers = {}
-      GetFood("Sumo Chank Pot").Customers = {"Midday Drunkards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Eastern Nishime").Customers = {"Midday Drunkards", "Shady Merchants", "Open-Air Class Students"}
-      GetFood("Caterpillar Casserole").Customers = {"Midday Drunkards", "Open-Air Class Students"}
-      GetFood("Orange-Sauce Kaiju Steak").Customers = {}
-      GetFood("Bamboo Sarmale").Customers = {"Midday Drunkards", "Dark Hunter Union (Grimoire)"}
-      GetFood("Pumpkin Pie").Customers = {"Shady Merchants", "Hexing Missionaries (Grimoire)"}
-   End Sub
+    Private Shared Sub LoadSlumCustomers()
+        GetFood("球獣肉とアスパラの中華炒め").Customers = {"青空教室の生徒たち"}
+        GetFood("軟骨揚げのシトロン餡かけ丼").Customers = {"路上にたむろする若者たち", "見回り中の衛士隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("シカ肉のタタキ風").Customers = {"アヤしい露店の商人団"}
+        GetFood("黒茶").Customers = {"アヤしい露店の商人団"}
+        GetFood("アゲハの姿佃煮").Customers = {"昼からのんだくれ隊", "アヤしい露店の商人団"}
+        GetFood("梟の軟骨からあげ").Customers = {"アヤしい露店の商人団", "青空教室の生徒たち", "見回り中の衛士隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("くるみ羊羹").Customers = {"アヤしい露店の商人団"}
+        GetFood("鹿肉と樹海野菜のすき鍋").Customers = {"昼からのんだくれ隊", "青空教室の生徒たち"}
+        GetFood("エスカルゴ焼シトロンソース添え").Customers = {"昼からのんだくれ隊", "呪言の普及振興を願う会 (グリモア)"}
+        GetFood("ハイラガコーヒー").Customers = {"アヤしい露店の商人団"}
+        GetFood("クルミ入りライ麦パン").Customers = {"アヤしい露店の商人団"}
+        GetFood("シカ肉のステーキ").Customers = {}
+        GetFood("麻辣獄火鍋").Customers = {"昼からのんだくれ隊"}
+        GetFood("鶏唐揚げの甘酢餡かけ").Customers = {"青空教室の生徒たち", "見回り中の衛士隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("栗月餅").Customers = {"路上にたむろする若者たち"}
+        GetFood("火龍果杏仁").Customers = {}
+        GetFood("怪しい石焼き鍋").Customers = {"昼からのんだくれ隊", "見回り中の衛士隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("巨猪の豚汁").Customers = {"昼からのんだくれ隊"}
+        GetFood("鬼いが栗の茶巾絞り").Customers = {}
+        GetFood("紅葉狩り串団子").Customers = {"路上にたむろする若者たち", "入国審査待ちの移民団 (イベント)"}
+        GetFood("かみつきのサンドイッチ").Customers = {"見回り中の衛士隊"}
+        GetFood("旬の秋野菜ポトフ").Customers = {"昼からのんだくれ隊", "青空教室の生徒たち"}
+        GetFood("パーシモンプディング").Customers = {"入国審査待ちの移民団 (イベント)"}
+        GetFood("ジビエカレーライス").Customers = {"路上にたむろする若者たち", "昼からのんだくれ隊"}
+        GetFood("リンゴ入り愛玉子風ブルーゼリー").Customers = {"アヤしい露店の商人団", "入国審査待ちの移民団 (イベント)"}
+        GetFood("野牛肉拉麺").Customers = {"アヤしい露店の商人団"}
+        GetFood("馬肉中華包子").Customers = {}
+        GetFood("雪鳥の蟹玉").Customers = {"昼からのんだくれ隊", "青空教室の生徒たち", "呪言の普及振興を願う会 (グリモア)"}
+        GetFood("東国の伝統兜焼き").Customers = {"昼からのんだくれ隊", "呪言の普及振興を願う会 (グリモア)"}
+        GetFood("雪鳥卵の熱々おでん").Customers = {"昼からのんだくれ隊"}
+        GetFood("カニの樹海茶漬け").Customers = {"路上にたむろする若者たち", "昼からのんだくれ隊", "アヤしい露店の商人団", "呪言の普及振興を願う会 (グリモア)"}
+        GetFood("林檎と抹茶のかき氷").Customers = {"アヤしい露店の商人団"}
+        GetFood("発酵怪魚パニーノ").Customers = {"昼からのんだくれ隊", "アヤしい露店の商人団", "呪言の普及振興を願う会 (グリモア)"}
+        GetFood("野牛ステーキのリンゴソース添え").Customers = {}
+        GetFood("カニクリームコロッケ").Customers = {"昼からのんだくれ隊", "アヤしい露店の商人団", "見回り中の衛士隊", "呪言の普及振興を願う会 (グリモア)"}
+        GetFood("樹海パエリア").Customers = {"路上にたむろする若者たち", "昼からのんだくれ隊"}
+        GetFood("蜘蛛の姿揚げ").Customers = {"路上にたむろする若者たち", "見回り中の衛士隊", "呪言の普及振興を願う会 (グリモア)"}
+        GetFood("樹海鳥の雷炒飯").Customers = {"路上にたむろする若者たち", "青空教室の生徒たち", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("森林サイ角煮").Customers = {"昼からのんだくれ隊", "アヤしい露店の商人団"}
+        GetFood("石化鳥と樹海野菜の細切り炒め").Customers = {"路上にたむろする若者たち", "青空教室の生徒たち", "見回り中の衛士隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("亀の甲羅焼き肉").Customers = {"見回り中の衛士隊"}
+        GetFood("大苺大福").Customers = {"アヤしい露店の商人団"}
+        GetFood("樹海桜茶").Customers = {"アヤしい露店の商人団"}
+        GetFood("石化鳥の肉じゃが").Customers = {"路上にたむろする若者たち", "昼からのんだくれ隊", "見回り中の衛士隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("サソリのグリーンパスタ").Customers = {"呪言の普及振興を願う会 (グリモア)"}
+        GetFood("ハチミツジャーマンポテト").Customers = {"アヤしい露店の商人団", "青空教室の生徒たち"}
+        GetFood("ももステーキの桜苺ジャム添え").Customers = {"見回り中の衛士隊"}
+        GetFood("サイ肉のとろとろシチュー").Customers = {"路上にたむろする若者たち", "昼からのんだくれ隊"}
+        GetFood("ノヅチ丸ごとスープ").Customers = {"昼からのんだくれ隊", "アヤしい露店の商人団", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("宝龍包").Customers = {"青空教室の生徒たち", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("皇帝ツバメの巣と岩茸の幻スープ").Customers = {"青空教室の生徒たち"}
+        GetFood("きょうか鶏").Customers = {"見回り中の衛士隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("特製大釜の鎧竜炊き込みご飯").Customers = {"路上にたむろする若者たち", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("桜肉のしゃぶしゃぶ	").Customers = {"アヤしい露店の商人団"}
+        GetFood("雲海山鳥の茶碗蒸し").Customers = {"青空教室の生徒たち", "見回り中の衛士隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("宝石煮こごりのツバメの巣入り").Customers = {"昼からのんだくれ隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("禍々しいアスピック").Customers = {"昼からのんだくれ隊", "アヤしい露店の商人団", "見回り中の衛士隊", "ダークハンター束縛連合 (グリモア)", "入国審査待ちの移民団 (イベント)"}
+        GetFood("３種食べ比べハンバーグ").Customers = {"見回り中の衛士隊"}
+        GetFood("タルタルステーキ").Customers = {}
+        GetFood("ストーンガレット").Customers = {}
+        GetFood("危険な花茶").Customers = {}
+        GetFood("シュウマイ").Customers = {"青空教室の生徒たち"}
+        GetFood("樹海特選の回鍋肉").Customers = {"青空教室の生徒たち", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("蜥蜴肉の蜜汁火方").Customers = {"アヤしい露店の商人団", "呪言の普及振興を願う会 (グリモア)", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("古代ヤドカリの姿造り").Customers = {"昼からのんだくれ隊", "呪言の普及振興を願う会 (グリモア)"}
+        GetFood("黒獣のお吸い物").Customers = {}
+        GetFood("力士秘伝のちゃんこ風鍋").Customers = {"昼からのんだくれ隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("東国伝来の煮しめ").Customers = {"昼からのんだくれ隊", "アヤしい露店の商人団", "青空教室の生徒たち"}
+        GetFood("大芋虫のキャセロール").Customers = {"昼からのんだくれ隊", "青空教室の生徒たち"}
+        GetFood("オレンジソースの怪獣ステーキ").Customers = {}
+        GetFood("タケノコが入ったサルマーレ").Customers = {"昼からのんだくれ隊", "ダークハンター束縛連合 (グリモア)"}
+        GetFood("パンプキンパイ").Customers = {"アヤしい露店の商人団", "呪言の普及振興を願う会 (グリモア)"}
+    End Sub
 
-   Private Shared Sub LoadSouthWardCustomers()
-      GetFood("Stir-Fried Roller").Customers = {"Hunters Association", "Landsknecht Guild (Grimoire)"}
-      GetFood("Citron Owl Bowl").Customers = {"Explorer Support Center", "Yggdrasil Construction"}
-      GetFood("Seared Deer").Customers = {"Hunters Association", "Landsknecht Guild (Grimoire)"}
-      GetFood("Black Tea").Customers = {"Furniture Makers"}
-      GetFood("Butterfly Tsukudani").Customers = {"Lumberjack Union", "Gunners Bureau (Grimoire)"}
-      GetFood("Owl Cartilage Karaage").Customers = {}
-      GetFood("Walnut Yokan").Customers = {}
-      GetFood("Forest Deer Sukiyaki").Customers = {"Lumberjack Union", "Hunters Association", "Gunners Bureau (Grimoire)"}
-      GetFood("Escargot Citron").Customers = {"Lumberjack Union", "Landsknecht Guild (Grimoire)"}
-      GetFood("Hi Lagaar Coffee").Customers = {"Furniture Makers", "Explorer Support Center"}
-      GetFood("Walnut Bread").Customers = {"Explorer Support Center"}
-      GetFood("Deer Steak").Customers = {"Hunters Association", "Landsknecht Guild (Grimoire)"}
-      GetFood("Mala Inferno Pot").Customers = {"Furniture Makers", "Hunters Association", "Gunners Bureau (Grimoire)", "Temporary Carpenters (Event)"}
-      GetFood("Sweet and Sour Moa").Customers = {}
-      GetFood("Chestnut Moon Cake").Customers = {}
-      GetFood("Dragon Jelly").Customers = {}
-      GetFood("Odd Ishiyaki Pot").Customers = {"Gunners Bureau (Grimoire)", "Temporary Carpenters (Event)"}
-      GetFood("Boar Tonjiru").Customers = {"Furniture Makers", "Hunters Association", "Gunners Bureau (Grimoire)"}
-      GetFood("Chestnut Chakin Shibori").Customers = {}
-      GetFood("Autumn Dango").Customers = {}
-      GetFood("Fanged Sandwich").Customers = {}
-      GetFood("Autumn Pot-au-feu").Customers = {"Furniture Makers", "Lumberjack Union", "Hunters Association", "Gunners Bureau (Grimoire)"}
-      GetFood("Persimmon Pudding").Customers = {}
-      GetFood("Gibier Curry Rice").Customers = {"Furniture Makers", "Hunters Association", "Explorer Support Center", "Yggdrasil Construction", "Gunners Bureau (Grimoire)"}
-      GetFood("Apple Blue Aiyu Jelly").Customers = {}
-      GetFood("Bison Lamian").Customers = {"Furniture Makers", "Hunters Association", "Explorer Support Center"}
-      GetFood("Horse Bao").Customers = {"Hunters Association", "Explorer Support Center"}
-      GetFood("Snow Egg Foo Young").Customers = {"Yggdrasil Construction", "Landsknecht Guild (Grimoire)"}
-      GetFood("Traditional Kabutoyaki").Customers = {"Landsknecht Guild (Grimoire)"}
-      GetFood("Snow Egg Oden").Customers = {"Furniture Makers", "Yggdrasil Construction"}
-      GetFood("Crab Chazuke").Customers = {"Furniture Makers", "Explorer Support Center", "Yggdrasil Construction"}
-      GetFood("Apple Matcha Shaved Ice").Customers = {}
-      GetFood("Monster Fish Panino").Customers = {"Explorer Support Center", "Landsknecht Guild (Grimoire)"}
-      GetFood("Apple Sauce Bison Steak").Customers = {"Hunters Association", "Landsknecht Guild (Grimoire)"}
-      GetFood("Crab Cream Croquette").Customers = {"Explorer Support Center"}
-      GetFood("Forest Paella").Customers = {"Hunters Association", "Explorer Support Center", "Yggdrasil Construction"}
-      GetFood("Fried Whole Spider").Customers = {"Lumberjack Union"}
-      GetFood("Forest Fried Rice").Customers = {"Explorer Support Center", "Yggdrasil Construction", "Landsknecht Guild (Grimoire)"}
-      GetFood("Stewed Rhino").Customers = {"Hunters Association", "Gunners Bureau (Grimoire)"}
-      GetFood("Pepper Cockatrice").Customers = {"Landsknecht Guild (Grimoire)"}
-      GetFood("Shell Yakiniku").Customers = {"Hunters Association", "Landsknecht Guild (Grimoire)", "Temporary Carpenters (Event)"}
-      GetFood("Strawberry Daikuku").Customers = {}
-      GetFood("Sakura Tea").Customers = {"Furniture Makers"}
-      GetFood("Stone Bird Nikujaga").Customers = {"Gunners Bureau (Grimoire)"}
-      GetFood("Scorpion Green Pasta").Customers = {"Lumberjack Union", "Explorer Support Center", "Yggdrasil Construction"}
-      GetFood("Honey German Potato").Customers = {}
-      GetFood("Strawberry-Jam Loin Steak").Customers = {"Landsknecht Guild (Grimoire)"}
-      GetFood("Rhino Meat Stew").Customers = {"Hunters Association", "Gunners Bureau (Grimoire)"}
-      GetFood("Nozuchi Soup").Customers = {"Furniture Makers", "Lumberjack Union", "Gunners Bureau (Grimoire)"}
-      GetFood("Zhulongbao").Customers = {"Lumberjack Union", "Explorer Support Center"}
-      GetFood("Nest and Mushroom Soup").Customers = {"Furniture Makers", "Lumberjack Union"}
-      GetFood("Beggar's Fowl").Customers = {"Temporary Carpenters (Event)"}
-      GetFood("Tortoise Takikomi Gohan").Customers = {"Explorer Support Center", "Yggdrasil Construction", "Landsknecht Guild (Grimoire)", "Temporary Carpenters (Event)"}
-      GetFood("Horse Shabu Shabu").Customers = {"Hunters Association", "Gunners Bureau (Grimoire)", "Temporary Carpenters (Event)"}
-      GetFood("Sky Chawanmushi").Customers = {"Lumberjack Union", "Yggdrasil Construction"}
-      GetFood("Gem Nikogori").Customers = {}
-      GetFood("Ominous Aspic").Customers = {}
-      GetFood("Triple Salisbury").Customers = {"Landsknecht Guild (Grimoire)"}
-      GetFood("Steak Tartare").Customers = {"Hunters Association", "Yggdrasil Construction", "Landsknecht Guild (Grimoire)"}
-      GetFood("Stone Galette").Customers = {"Yggdrasil Construction", "Temporary Carpenters (Event)"}
-      GetFood("Dangerous Flowering Tea").Customers = {"Furniture Makers"}
-      GetFood("Shumai").Customers = {"Lumberjack Union", "Hunters Association", "Explorer Support Center"}
-      GetFood("Twice-cooked Meat").Customers = {"Landsknecht Guild (Grimoire)"}
-      GetFood("BBQ Lizard").Customers = {"Lumberjack Union"}
-      GetFood("Hermit Suguta-zukuri").Customers = {"Lumberjack Union"}
-      GetFood("Black Osuimono").Customers = {"Furniture Makers", "Hunters Association"}
-      GetFood("Sumo Chank Pot").Customers = {"Gunners Bureau (Grimoire)"}
-      GetFood("Eastern Nishime").Customers = {"Lumberjack Union", "Gunners Bureau (Grimoire)"}
-      GetFood("Caterpillar Casserole").Customers = {"Lumberjack Union", "Gunners Bureau (Grimoire)"}
-      GetFood("Orange-Sauce Kaiju Steak").Customers = {"Landsknecht Guild (Grimoire)"}
-      GetFood("Bamboo Sarmale").Customers = {"Gunners Bureau (Grimoire)"}
-      GetFood("Pumpkin Pie").Customers = {"Lumberjack Union"}
-   End Sub
+    Private Shared Sub LoadSouthWardCustomers()
+        GetFood("球獣肉とアスパラの中華炒め").Customers = {"森林マタギ団", "ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("軟骨揚げのシトロン餡かけ丼").Customers = {"冒険者支援センター", "ユグドラシル建設作業員"}
+        GetFood("シカ肉のタタキ風").Customers = {"森林マタギ団", "ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("黒茶").Customers = {"南区の家具工房職人"}
+        GetFood("アゲハの姿佃煮").Customers = {"ハイラガ木こりの会", "公国ガンナー管理組合 (グリモア)"}
+        GetFood("梟の軟骨からあげ").Customers = {}
+        GetFood("くるみ羊羹").Customers = {}
+        GetFood("鹿肉と樹海野菜のすき鍋").Customers = {"ハイラガ木こりの会", "森林マタギ団", "公国ガンナー管理組合 (グリモア)"}
+        GetFood("エスカルゴ焼シトロンソース添え").Customers = {"ハイラガ木こりの会", "ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("ハイラガコーヒー").Customers = {"南区の家具工房職人", "冒険者支援センター"}
+        GetFood("クルミ入りライ麦パン").Customers = {"冒険者支援センター"}
+        GetFood("シカ肉のステーキ").Customers = {"森林マタギ団", "ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("麻辣獄火鍋").Customers = {"南区の家具工房職人", "森林マタギ団", "公国ガンナー管理組合 (グリモア)", "一時雇いの大工集団 (イベント)"}
+        GetFood("鶏唐揚げの甘酢餡かけ").Customers = {}
+        GetFood("栗月餅").Customers = {}
+        GetFood("火龍果杏仁").Customers = {}
+        GetFood("怪しい石焼き鍋").Customers = {"公国ガンナー管理組合 (グリモア)", "一時雇いの大工集団 (イベント)"}
+        GetFood("巨猪の豚汁").Customers = {"南区の家具工房職人", "森林マタギ団", "公国ガンナー管理組合 (グリモア)"}
+        GetFood("鬼いが栗の茶巾絞り").Customers = {}
+        GetFood("紅葉狩り串団子").Customers = {}
+        GetFood("かみつきのサンドイッチ").Customers = {}
+        GetFood("旬の秋野菜ポトフ").Customers = {"南区の家具工房職人", "ハイラガ木こりの会", "森林マタギ団", "公国ガンナー管理組合 (グリモア)"}
+        GetFood("パーシモンプディング").Customers = {}
+        GetFood("ジビエカレーライス").Customers = {"南区の家具工房職人", "森林マタギ団", "冒険者支援センター", "ユグドラシル建設作業員", "公国ガンナー管理組合 (グリモア)"}
+        GetFood("リンゴ入り愛玉子風ブルーゼリー").Customers = {}
+        GetFood("野牛肉拉麺").Customers = {"南区の家具工房職人", "森林マタギ団", "冒険者支援センター"}
+        GetFood("馬肉中華包子").Customers = {"森林マタギ団", "冒険者支援センター"}
+        GetFood("雪鳥の蟹玉").Customers = {"ユグドラシル建設作業員", "ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("東国の伝統兜焼き").Customers = {"ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("雪鳥卵の熱々おでん").Customers = {"南区の家具工房職人", "ユグドラシル建設作業員"}
+        GetFood("カニの樹海茶漬け").Customers = {"南区の家具工房職人", "冒険者支援センター", "ユグドラシル建設作業員"}
+        GetFood("林檎と抹茶のかき氷").Customers = {}
+        GetFood("発酵怪魚パニーノ").Customers = {"冒険者支援センター", "ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("野牛ステーキのリンゴソース添え").Customers = {"森林マタギ団", "ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("カニクリームコロッケ").Customers = {"冒険者支援センター"}
+        GetFood("樹海パエリア").Customers = {"森林マタギ団", "冒険者支援センター", "ユグドラシル建設作業員"}
+        GetFood("蜘蛛の姿揚げ").Customers = {"ハイラガ木こりの会"}
+        GetFood("樹海鳥の雷炒飯").Customers = {"冒険者支援センター", "ユグドラシル建設作業員", "ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("森林サイ角煮").Customers = {"森林マタギ団", "公国ガンナー管理組合 (グリモア)"}
+        GetFood("石化鳥と樹海野菜の細切り炒め").Customers = {"ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("亀の甲羅焼き肉").Customers = {"森林マタギ団", "ソードマン闘技研鑽会 (グリモア)", "一時雇いの大工集団 (イベント)"}
+        GetFood("大苺大福").Customers = {}
+        GetFood("樹海桜茶").Customers = {"南区の家具工房職人"}
+        GetFood("石化鳥の肉じゃが").Customers = {"公国ガンナー管理組合 (グリモア)"}
+        GetFood("サソリのグリーンパスタ").Customers = {"ハイラガ木こりの会", "冒険者支援センター", "ユグドラシル建設作業員"}
+        GetFood("ハチミツジャーマンポテト").Customers = {}
+        GetFood("ももステーキの桜苺ジャム添え").Customers = {"ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("サイ肉のとろとろシチュー").Customers = {"森林マタギ団", "公国ガンナー管理組合 (グリモア)"}
+        GetFood("ノヅチ丸ごとスープ").Customers = {"南区の家具工房職人", "ハイラガ木こりの会", "公国ガンナー管理組合 (グリモア)"}
+        GetFood("宝龍包").Customers = {"ハイラガ木こりの会", "冒険者支援センター"}
+        GetFood("皇帝ツバメの巣と岩茸の幻スープ").Customers = {"南区の家具工房職人", "ハイラガ木こりの会"}
+        GetFood("きょうか鶏").Customers = {"一時雇いの大工集団 (イベント)"}
+        GetFood("特製大釜の鎧竜炊き込みご飯").Customers = {"冒険者支援センター", "ユグドラシル建設作業員", "ソードマン闘技研鑽会 (グリモア)", "一時雇いの大工集団 (イベント)"}
+        GetFood("桜肉のしゃぶしゃぶ	").Customers = {"森林マタギ団", "公国ガンナー管理組合 (グリモア)", "一時雇いの大工集団 (イベント)"}
+        GetFood("雲海山鳥の茶碗蒸し").Customers = {"ハイラガ木こりの会", "ユグドラシル建設作業員"}
+        GetFood("宝石煮こごりのツバメの巣入り").Customers = {}
+        GetFood("禍々しいアスピック").Customers = {}
+        GetFood("３種食べ比べハンバーグ").Customers = {"ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("タルタルステーキ").Customers = {"森林マタギ団", "ユグドラシル建設作業員", "ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("ストーンガレット").Customers = {"ユグドラシル建設作業員", "一時雇いの大工集団 (イベント)"}
+        GetFood("危険な花茶").Customers = {"南区の家具工房職人"}
+        GetFood("シュウマイ").Customers = {"ハイラガ木こりの会", "森林マタギ団", "冒険者支援センター"}
+        GetFood("樹海特選の回鍋肉").Customers = {"ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("蜥蜴肉の蜜汁火方").Customers = {"ハイラガ木こりの会"}
+        GetFood("古代ヤドカリの姿造り").Customers = {"ハイラガ木こりの会"}
+        GetFood("黒獣のお吸い物").Customers = {"南区の家具工房職人", "森林マタギ団"}
+        GetFood("力士秘伝のちゃんこ風鍋").Customers = {"公国ガンナー管理組合 (グリモア)"}
+        GetFood("東国伝来の煮しめ").Customers = {"ハイラガ木こりの会", "公国ガンナー管理組合 (グリモア)"}
+        GetFood("大芋虫のキャセロール").Customers = {"ハイラガ木こりの会", "公国ガンナー管理組合 (グリモア)"}
+        GetFood("オレンジソースの怪獣ステーキ").Customers = {"ソードマン闘技研鑽会 (グリモア)"}
+        GetFood("タケノコが入ったサルマーレ").Customers = {"公国ガンナー管理組合 (グリモア)"}
+        GetFood("パンプキンパイ").Customers = {"ハイラガ木こりの会"}
+    End Sub
 #End Region
 
-   Private Sub ComboBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles DistrictComboBox.SelectedIndexChanged
-      GivenWard = DirectCast([Enum].Parse(GetType(Ward), DistrictComboBox.Text), Ward)
-   End Sub
+    Private Sub ComboBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles DistrictComboBox.SelectedIndexChanged
+        GivenWard = DirectCast([Enum].Parse(GetType(Ward), DistrictComboBox.Text), Ward)
+    End Sub
 
-   Private Sub Button1_Click(sender As Object, e As EventArgs) Handles NextButton.Click
-      GoDownOneFood()
-   End Sub
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles NextButton.Click
+        GoDownOneFood()
+    End Sub
 
-   Private Sub Button2_Click(sender As Object, e As EventArgs) Handles PrevButton.Click
-      GoUpOneFood()
-   End Sub
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles PrevButton.Click
+        GoUpOneFood()
+    End Sub
+
+    Private Sub GroupFlowLayoutPanel_Paint(sender As Object, e As PaintEventArgs) Handles GroupFlowLayoutPanel.Paint
+
+    End Sub
 End Class

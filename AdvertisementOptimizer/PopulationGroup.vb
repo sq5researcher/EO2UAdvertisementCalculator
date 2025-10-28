@@ -18,27 +18,31 @@
 Public Class PopulationGroup
 #Region "Constants"
    Shared POPULATIONS() As String = {"1", "2", "3", "4"}
-   Shared SouthCustomers() As String = {"Furniture Makers", "Lumberjack Union", "Hunters Association", "Explorer Support Center", "Yggdrasil Construction", "Gunners Bureau (Grimoire)", "Landsknecht Guild (Grimoire)", "Temporary Carpenters (Event)"}
-   Shared EastCustomers() As String = {"Senior Club", "Tailor Guild", "East Ward Guards", "Lagaard Cultivators", "Playing Kids", "Survivalist Association (Grimoire)", "Clinic Medics (Grimoire)", "Farmers Market Patrons (Event)"}   Shared SlumsCustomers() As String = {"Loitering Youths", "Midday Drunkards", "Shady Merchants", "Open-Air Class Students", "Patrolling Guards", "Hexing Missionaries (Grimoire)", "Dark Hunter Union (Grimoire)", "Pending Immigrants (Event)"}   Shared WestCustomers() As String = {"HL Academy Students", "HL Academy Professors", "Custom Shoemakers", "West Artist Guild", "Guard Trainees", "Alchemist Union (Grimoire)", "War Lore Study Society (Grimoire)", "Bazaar Visitors (Event)"}   Shared NorthCustomers() As String = {"Lagaard Ceramics Club", "Blacksmith Craftsmen", "Street Performers", "Lagaard Lager Brewery", "Sunflower Arcade Workers", "Troubadours For You (Grimoire)", "Jukai Bushido Dojo (Grimoire)", "Caravan Members (Event)"}   Shared UptownCustomers() As String = {"Aristocrat Club", "Shoe Shiners", "Duchy Maid Union", "Uptown Ladies Club", "Castle Guards", "Princess Tea Party (Grimoire)", "Golden Protectors (Grimoire)", "Foreign Ambassadors (Event)"}
+    Shared SouthCustomers() As String = {"南区の家具工房職人", "ハイラガ木こりの会", "森林マタギ団", "冒険者支援センター", "ユグドラシル建設作業員", "公国ガンナー管理組合 (グリモア)", "ソードマン闘技研鑽会 (グリモア)", "一時雇いの大工集団 (イベント)"}
+    Shared EastCustomers() As String = {"ともしび老人会", "仕立て屋ギルドの職人", "東区担当の衛兵隊", "ハイラガ開墾団", "道で遊ぶ子供たち", "レンジャー協会 (グリモア)", "施療院のお抱えメディック (グリモア)", "野菜直売会に訪れた客 (イベント)"}
+    Shared SlumsCustomers() As String = {"路上にたむろする若者たち", "昼からのんだくれ隊", "アヤしい露店の商人団", "青空教室の生徒たち", "見回り中の衛士隊", "呪言の普及振興を願う会 (グリモア)", "ダークハンター束縛連合 (グリモア)", "入国審査待ちの移民団 (イベント)"}
+    Shared WestCustomers() As String = {"国立ハイ・ラガード学院生", "ハイ・ラガード学院教授連", "オーダーメイド靴工房員", "西区美術家ギルド員", "衛士隊訓練生", "錬金術師互助組合 (グリモア)", "現代巫術研究会 (グリモア)", "学院開催のバザー客 (イベント)"}
+    Shared NorthCustomers() As String = {"ラガード陶芸俱楽部", "鉄工鍛冶ギルドの職人", "大道芸人の一座", "ハイラガ酒蔵の蔵人", "ひまわり商店街の店員", "アナタのためのバード隊 (グリモア)", "樹海流武士道場の門徒 (グリモア)", "訪問中のキャラバン隊員 (イベント)"}
+    Shared UptownCustomers() As String = {"貴族子弟の社交クラブ", "街路の靴磨き職人", "公国メイド組合員", "中央区婦人会", "城付き近衛兵団員", "プリンセス茶会のメンバー (グリモア)", "黄金樹聖騎士団員 (グリモア)", "逗留中の外交使節団 (イベント)"}
 #End Region
 
-   Private _GivenWard As WardGroup.Ward
+    Private _GivenWard As WardGroup.Ward
    Public Property GivenWard As WardGroup.Ward
       Set(value As WardGroup.Ward)
          _GivenWard = value
          SetStrListToComboBox(POPULATIONS, PopulationComboBox)
          Select Case _GivenWard
-            Case WardGroup.Ward.South
+            Case WardGroup.Ward.南区
                SetStrListToComboBox(SouthCustomers, CustomerComboBox)
-            Case WardGroup.Ward.East
+            Case WardGroup.Ward.東区
                SetStrListToComboBox(EastCustomers, CustomerComboBox)
-            Case WardGroup.Ward.West
+            Case WardGroup.Ward.西区
                SetStrListToComboBox(WestCustomers, CustomerComboBox)
-            Case WardGroup.Ward.North
+            Case WardGroup.Ward.北区
                SetStrListToComboBox(NorthCustomers, CustomerComboBox)
-            Case WardGroup.Ward.Uptown
+            Case WardGroup.Ward.中央区
                SetStrListToComboBox(UptownCustomers, CustomerComboBox)
-            Case WardGroup.Ward.Slums
+            Case WardGroup.Ward.街外れ
                SetStrListToComboBox(SlumsCustomers, CustomerComboBox)
             Case WardGroup.Ward.None
 
@@ -68,10 +72,10 @@ Public Class PopulationGroup
                Return 3
             Case "4"
                Return 4
-            Case "Diamond" ' Diamond seems to give about the same amount as 4 people
-               Return 4
-            Case "Event"
-               Return 5
+                Case "グリモア" ' Diamond seems to give about the same amount as 4 people
+                    Return 4
+                Case "イベント"
+                    Return 5
             Case Else
                Throw New Exception("Unacceptable population amount: " & PopulationComboBox.Text)
          End Select
@@ -99,19 +103,19 @@ Public Class PopulationGroup
 
    Private oldText As String = ""
    Private Sub CustomerComboBox_SelectedIndexChanged(sender As Object, e As EventArgs) Handles CustomerComboBox.SelectedIndexChanged
-      If CustomerComboBox.Text.Contains("Event") Then
-         PopulationComboBox.Items.Clear()
-         PopulationComboBox.Items.Add("Event")
-         PopulationComboBox.SelectedItem = "Event"
-      ElseIf CustomerComboBox.Text.Contains("Grimoire") Then
-         PopulationComboBox.Items.Clear()
-         PopulationComboBox.Items.Add("Diamond")
-         PopulationComboBox.SelectedItem = "Diamond"
-      Else
-         If oldText.Contains("Event") OrElse oldText.Contains("Grimoire") Then
-            SetStrListToComboBox(POPULATIONS, PopulationComboBox)
-         End If
-         PopulationComboBox.SelectedItem = "1"
+        If CustomerComboBox.Text.Contains("イベント") Then
+            PopulationComboBox.Items.Clear()
+            PopulationComboBox.Items.Add("イベント")
+            PopulationComboBox.SelectedItem = "イベント"
+        ElseIf CustomerComboBox.Text.Contains("グリモア") Then
+            PopulationComboBox.Items.Clear()
+            PopulationComboBox.Items.Add("グリモア")
+            PopulationComboBox.SelectedItem = "グリモア"
+        Else
+            If oldText.Contains("イベント") OrElse oldText.Contains("グリモア") Then
+                SetStrListToComboBox(POPULATIONS, PopulationComboBox)
+            End If
+            PopulationComboBox.SelectedItem = "1"
       End If
       oldText = CustomerComboBox.Text
    End Sub

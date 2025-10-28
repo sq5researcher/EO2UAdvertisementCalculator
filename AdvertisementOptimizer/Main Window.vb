@@ -17,11 +17,11 @@
 
 Public Class MainWindow
 
-   Private Sub AboutButton_Click(sender As Object, e As EventArgs) Handles AboutButton.Click
-      About.ShowDialog()
-   End Sub
+    Private Sub AboutButton_Click(sender As Object, e As EventArgs) Handles AboutButton.Click
+        About.ShowDialog()
+    End Sub
 
-   Private Sub MainWindow_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-      Console.WriteLine(My.Application.Info.Version)
-   End Sub
+    Private Sub MainWindow_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Console.WriteLine(My.Application.Info.Version)
+    End Sub
 End Class
