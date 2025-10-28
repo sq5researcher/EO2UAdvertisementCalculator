@@ -1,3 +1,19 @@
+# EO2UAdvertisementCalculator 日本語版 (version 0.8, 2025/10/28)
+
+新・世界樹の迷宮２の宣伝計画のためのツールです。  
+このツールは https://github.com/aktai0/EO2UAdvertisementCalculator を日本語訳したものです。
+
+# 使い方
+1. EO2U.Advertisement.Calculator.exe をダウンロードして実行
+2. 地区を選ぶ → 解禁されているレシピのランクを選択 → グループと人型アイコンの数を指定
+3. 計算ボタンをクリックすると、いちばん売れ行きの良くなる料理と、どの顧客に売れるかが表示されます。
+4. 計算して出てきた料理を作れない場合(材料がないなど)は、「前へ」「次へ」ボタンを押すことで最適な料理が順番に表示されます。
+
+# 補足
+システム要件などはオリジナルのReadMeを参照してください。
+
+↓↓↓ オリジナルのReadMe ↓↓↓
+
 # EO2UAdvertisementCalculator (version 0.8, October 10, 2015)
 Made by aktai0 / Tokenx on GameFaqs
 
